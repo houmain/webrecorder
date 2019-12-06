@@ -51,6 +51,5 @@ std::string_view get_hostname_port(LStringView url);
 std::string_view get_scheme_hostname_port(LStringView url);
 std::string_view get_scheme_hostname_port_path(LStringView url);
 std::string_view get_scheme_hostname_port_path_base(LStringView url);
-std::string_view get_toplevel_domain(LStringView url);
 std::string_view get_without_first_domain(LStringView url);
 std::string_view get_file_extension(LStringView url);

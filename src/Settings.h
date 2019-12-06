@@ -4,18 +4,18 @@
 #include <vector>
 
 enum class FollowLinkPolicy {
-  all,
-  same_top_level_domain,
+  none,
   same_hostname,
-  same_subpath,
-  none
+  same_second_level_domain,
+  same_path,
+  all,
 };
 
 enum class ValidationPolicy {
-  always,
+  never,
   when_expired,
   when_expired_reload,
-  never
+  always
 };
 
 struct Settings {
@@ -31,8 +31,8 @@ struct Settings {
   bool filename_from_title{ false };
   bool frontend_mode{ false };
   bool verbose{ false };
-  FollowLinkPolicy follow_link_policy{ FollowLinkPolicy::same_subpath };
-  ValidationPolicy validation_policy{ ValidationPolicy::when_expired };
+  FollowLinkPolicy follow_link_policy{ FollowLinkPolicy::none };
+  ValidationPolicy validation_policy{ ValidationPolicy::never };
 };
 
 bool interpret_commandline(Settings& settings, int argc, const char* argv[]);

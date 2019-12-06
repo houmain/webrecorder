@@ -322,17 +322,6 @@ std::string_view get_scheme_hostname_port_path_base(LStringView url) {
   return path.substr(0, path.rfind('/') + 1);
 }
 
-std::string_view get_toplevel_domain(LStringView url) {
-  const auto hostname_port = get_hostname_port(url);
-  if (const auto pos = hostname_port.rfind('.'); pos != std::string_view::npos) {
-    if (auto dot = hostname_port.rfind('.', pos - 1); dot != std::string_view::npos)
-      return hostname_port.substr(dot + 1);
-    if (auto slash = hostname_port.rfind('/', pos - 1); slash != std::string_view::npos)
-      return hostname_port.substr(slash + 1);
-  }
-  return hostname_port;
-}
-
 std::string_view get_without_first_domain(LStringView url) {
   if (const auto dot = url.find('.'); dot != std::string_view::npos)
     return url.substr(dot + 1);

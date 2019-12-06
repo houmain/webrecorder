@@ -67,7 +67,7 @@ void write_output(Event event) {
       case Event::accept: return "ACCEPT";
       case Event::redirect: return "REDIRECT";
       case Event::download_started: return "DOWNLOAD";
-      case Event::download_spared: return "DOWNLOAD_SPARED";
+      case Event::download_omitted: return "DOWNLOAD_OMITTED";
       case Event::download_finished: return "DOWNLOAD_FINISHED";
       case Event::download_failed: return "DOWNLOAD_FAILED";
       case Event::download_blocked: return "DOWNLOAD_BLOCKED";

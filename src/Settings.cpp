@@ -31,20 +31,20 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
       if (++i >= argc || std::strlen(argv[i]) != 1)
         return false;
       switch (argv[i][0]) {
-        case 'A': 
-          settings.follow_link_policy = FollowLinkPolicy::all;
+        case 'N':
+          settings.follow_link_policy = FollowLinkPolicy::none;
           break;
-        case 'T': 
-          settings.follow_link_policy = FollowLinkPolicy::same_top_level_domain;
-          break;
-        case 'H': 
+        case 'H':
           settings.follow_link_policy = FollowLinkPolicy::same_hostname;
           break;
-        case 'P': 
-          settings.follow_link_policy = FollowLinkPolicy::same_subpath;
+        case 'D':
+          settings.follow_link_policy = FollowLinkPolicy::same_second_level_domain;
           break;
-        case 'N': 
-          settings.follow_link_policy = FollowLinkPolicy::none;
+        case 'P': 
+          settings.follow_link_policy = FollowLinkPolicy::same_path;
+          break;
+        case 'A':
+          settings.follow_link_policy = FollowLinkPolicy::all;
           break;
         default:
           return false;
@@ -54,8 +54,8 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
       if (++i >= argc || std::strlen(argv[i]) != 1)
         return false;
       switch (argv[i][0]) {
-        case 'A':
-          settings.validation_policy = ValidationPolicy::always;
+        case 'N':
+          settings.validation_policy = ValidationPolicy::never;
           break;
         case 'E':
           settings.validation_policy = ValidationPolicy::when_expired;
@@ -63,8 +63,8 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
         case 'R':
           settings.validation_policy = ValidationPolicy::when_expired_reload;
           break;
-        case 'N':
-          settings.validation_policy = ValidationPolicy::never;
+        case 'A':
+          settings.validation_policy = ValidationPolicy::always;
           break;
         default:
           return false;
@@ -135,26 +135,26 @@ void print_help_message(std::ostream& os, const char* argv0) {
       "  -i <URL>    set initial request URL.\n"
       "  -o <FILE>   set read/write filename.\n"
       "  -f <POLICY> follow link policy:\n"
-      "                A  all\n"
-      "                T  same top level domain\n"
+      "                N  none (default)\n"
       "                H  same hostname\n"
-      "                P  same subpath (default)\n"
-      "                N  none\n"
+      "                D  same second-level domain\n"
+      "                P  same path\n"
+      "                A  all\n"
       "  -v <POLICY> validation policy:\n"
-      "                A  always\n"
+      "                N  never (default)\n"
       "                E  when expired\n"
-      "                R  when expired on reload (default)\n"
-      "                N  never\n"
+      "                R  when expired on reload\n"
+      "                A  always\n"
       "  -b <FILE>   add host block list.\n"
       "  -p <PROXY>  set a HTTP proxy (host:port).\n"
-      "  -d <FLAGS>  disable (enabled by default):"
-      "                W writing to file\n"
-      "                R reading from file\n"
-      "                A appending\n"
-      "                D downloading\n"
-      "                B opening of browser\n"
-      "  -e <FLAGS>  enable (disabled by default):"
-      "                T generate filename from title\n"
+      "  -d <FLAGS>  disable (enabled by default):\n"
+      "                W  writing to file\n"
+      "                R  reading from file\n"
+      "                A  appending\n"
+      "                D  downloading\n"
+      "                B  opening of browser\n"
+      "  -e <FLAGS>  enable (disabled by default):\n"
+      "                T  generate filename from title\n"
       "  -h, --help print this help.\n"
       "\n"
       "All Rights Reserved.\n"

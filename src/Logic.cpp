@@ -30,26 +30,28 @@ namespace {
     return static_cast<int>(status_code) / 100 == 3;
   }
 
-  std::string get_follow_link_regex(const Settings& settings) {
-    const auto to_regex = [](std::string regex) {
-      replace_all(regex, "http://", "https?://");
-      replace_all(regex, ".", "\\.");
-      replace_all(regex, "/", "\\/");
-      return "^" + regex + ".*";
-    };
+  std::string url_to_regex(std::string_view url, bool sub_domains = false) {
+    auto regex = std::string(url);
+    replace_all(regex, "http://", "https?://");
+    if (sub_domains)
+      replace_all(regex, "://", "://([^/]+.)?");
+    replace_all(regex, ".", "\\.");
+    replace_all(regex, "/", "\\/");
+    return "^" + regex + ".*";
+  };
 
+  std::string get_follow_link_regex(const Settings& settings) {
     switch (settings.follow_link_policy) {
-      case FollowLinkPolicy::all:
-        return ".*";
-      case FollowLinkPolicy::same_top_level_domain:
-        return "^https?:\\/\\/[^\\/]*" +
-          std::string(get_toplevel_domain(settings.url)) + ".*";
-      case FollowLinkPolicy::same_hostname:
-        return to_regex(std::string(get_scheme_hostname_port(settings.url)));
-      case FollowLinkPolicy::same_subpath:
-        return to_regex(std::string(get_scheme_hostname_port_path_base(settings.url)));
       case FollowLinkPolicy::none:
         return "^$";
+      case FollowLinkPolicy::same_hostname:
+        return url_to_regex(get_scheme_hostname_port(settings.url));
+      case FollowLinkPolicy::same_second_level_domain:
+        return url_to_regex(get_scheme_hostname_port(settings.url), true);
+      case FollowLinkPolicy::same_path:
+        return url_to_regex(get_scheme_hostname_port_path_base(settings.url));
+      case FollowLinkPolicy::all:
+        return ".*";
     }
     return "";
   }
@@ -317,7 +319,7 @@ void Logic::handle_response(Server::Request& request,
   const auto status_code = response.status_code();
   if (status_code != StatusCode::success_ok)
     if (serve_from_archive(request, url, true))
-      return log(Event::download_spared, url);
+      return log(Event::download_omitted, url);
 
   if (response.error())
     return serve_error(request, url, status_code);
@@ -467,18 +469,12 @@ void Logic::set_filename_from_title(const std::string& title_) {
   }
 }
 
-void Logic::set_strict_transport_security(const std::string& url,
-    [[maybe_unused]] bool include_subdomains) {
+void Logic::set_strict_transport_security(const std::string& url, bool sub_domains) {
   auto lock = std::lock_guard(m_write_mutex);
-  const auto scheme_hostname = get_scheme_hostname_port(url);
-  if (!m_strict_transport_security.count(scheme_hostname)) {
-    auto regex = std::string("^http://");
-    auto domain = std::string(get_toplevel_domain(url));
-    replace_all(domain, ".", "\\.");
-    regex += ".*" + domain + ".*";
-    replace_all(regex, "/", "\\/");
-    m_strict_transport_security.emplace(scheme_hostname, regex);
-  }
+  const auto hostname = get_hostname_port(url);
+  if (!m_strict_transport_security.count(hostname))
+    m_strict_transport_security.emplace(hostname,
+      url_to_regex("http://" + std::string(hostname), sub_domains));
 }
 
 std::string Logic::apply_strict_transport_security(std::string url) const {

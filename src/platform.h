@@ -9,7 +9,7 @@ enum class Event {
   accept,
   redirect,
   download_started,
-  download_spared,
+  download_omitted,
   download_finished,
   download_failed,
   download_blocked,
