@@ -82,8 +82,7 @@ std::string_view unquote(LStringView str) {
   return str;
 }
 
-void replace_all(std::string& data, const std::string& search,
-    const std::string& replace) {
+void replace_all(std::string& data, std::string_view search, std::string_view replace) {
   for (auto pos = data.find(search); pos != std::string::npos;
       pos = data.find(search, pos + replace.size()))
     data.replace(pos, search.size(), replace);

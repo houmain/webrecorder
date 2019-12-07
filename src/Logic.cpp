@@ -40,16 +40,17 @@ namespace {
     return "^" + regex + ".*";
   };
 
-  std::string get_follow_link_regex(const Settings& settings) {
-    switch (settings.follow_link_policy) {
+  std::string get_follow_link_regex(FollowLinkPolicy follow_link_policy,
+      const std::string& url) {
+    switch (follow_link_policy) {
       case FollowLinkPolicy::none:
         return "^$";
       case FollowLinkPolicy::same_hostname:
-        return url_to_regex(get_scheme_hostname_port(settings.url));
+        return url_to_regex(get_scheme_hostname_port(url));
       case FollowLinkPolicy::same_second_level_domain:
-        return url_to_regex(get_scheme_hostname_port(settings.url), true);
+        return url_to_regex(get_scheme_hostname_port(url), true);
       case FollowLinkPolicy::same_path:
-        return url_to_regex(get_scheme_hostname_port_path_base(settings.url));
+        return url_to_regex(get_scheme_hostname_port_path_base(url));
       case FollowLinkPolicy::all:
         return ".*";
     }
@@ -144,7 +145,6 @@ Logic::Logic(Settings* settings, std::unique_ptr<HostBlocker> host_blocker)
   }
 
   set_server_base(m_settings.url);
-  m_follow_link_regex = get_follow_link_regex(m_settings);
 }
 
 Logic::~Logic() {
@@ -180,6 +180,8 @@ void Logic::setup(std::string local_server_url,
 void Logic::set_server_base(const std::string& url) {
   m_server_base = get_scheme_hostname_port(url);
   m_server_base_path = get_scheme_hostname_port_path(url);
+  m_follow_link_regex = get_follow_link_regex(
+    m_settings.follow_link_policy, url);
 }
 
 void Logic::handle_request(Server::Request request) {

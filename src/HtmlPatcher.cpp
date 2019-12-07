@@ -253,7 +253,7 @@ void HtmlPatcher::inject_patch_script(std::string_view at) {
     "</script>"
     "<script type='text/javascript' src='" +
       std::string(get_patch_script_path()) + "'></script>";
-
+  replace_all(patch_script, "'", "\"");
   patch(at, std::move(patch_script));
 }
 

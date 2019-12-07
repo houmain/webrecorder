@@ -23,7 +23,7 @@ bool starts_with(std::string_view str, std::string_view with);
 bool ends_with(std::string_view str, std::string_view with);
 std::string_view trim(LStringView str);
 std::string_view unquote(LStringView str);
-void replace_all(std::string& data, const std::string& search, const std::string& replace);
+void replace_all(std::string& data, std::string_view search, std::string_view replace);
 ByteView as_byte_view(std::string_view data);
 std::string_view as_string_view(ByteView data);
 bool iequals(std::string_view s1, std::string_view s2);

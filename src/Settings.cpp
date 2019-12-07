@@ -127,8 +127,10 @@ void print_help_message(std::ostream& os, const char* argv0) {
     program = program.substr(0, i);
 
   os << program
+#if __has_include("_version.h")
     << " " <<
-#include "_version.h"
+# include "_version.h"
+#endif
     << " (c) 2019 by Albert Kalchmair\n"
     << "\n"
     << "Usage: " << program << " [-options] [URL|FILE]\n"
