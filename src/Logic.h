@@ -7,6 +7,7 @@
 #include "Archive.h"
 #include "Settings.h"
 #include <regex>
+#include <optional>
 
 struct Settings;
 class HostBlocker;
