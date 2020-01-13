@@ -34,6 +34,7 @@ private:
   void set_server_base(const std::string& url);
   std::optional<CacheInfo> get_cache_info(const Server::Request& request, 
     const std::string& url);
+  bool serve_from_cache(Server::Request& request, const std::string& url);
   bool serve_from_archive(Server::Request& request, const std::string& url,
     bool write_to_archive);
   void forward_request(Server::Request request, const std::string& url,

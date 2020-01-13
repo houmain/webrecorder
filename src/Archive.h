@@ -43,16 +43,23 @@ public:
   bool open(std::filesystem::path filename);
   void move_on_close(std::filesystem::path filename, bool overwrite);
   bool close();
-  bool contains(const std::string& filename) const;
   bool write(const std::string& filename, ByteView data, 
     time_t modification_time = 0);
   void async_write(const std::string& filename, ByteView data,
     time_t modification_time, std::function<void(bool)>&& on_complete);
+  bool contains(const std::string& filename) const;
+  void async_read(const std::string& filename,
+    std::function<void(ByteVector, time_t)>&& on_complete);
 
 private:
   bool update_filenames(const std::string& filename);
+  bool reopen(bool for_reading);
+  void do_close();
   bool do_write(const std::string& filename, ByteView data, 
     time_t modification_time);
+  ByteVector do_read(const std::string& filename);
+
+  void insert_task(std::function<void()>&& task);
   void start_thread();
   void finish_thread();
   void thread_func();
@@ -64,6 +71,7 @@ private:
 
   std::mutex m_zip_mutex;
   void* m_zip{ };
+  bool m_reading{ };
 
   std::mutex m_tasks_mutex;
   std::condition_variable m_tasks_signal;

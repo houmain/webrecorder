@@ -172,20 +172,11 @@ void ArchiveReader::for_each_file(const std::function<void(std::string)>& callba
 //-------------------------------------------------------------------------
 
 bool ArchiveWriter::open(std::filesystem::path filename) {
-  if (m_zip)
+  if (!m_filename.empty() || filename.empty())
     return false;
 
   m_filename = std::move(filename);
-
-#if defined(_WIN32)
-  auto filefunc = zlib_filefunc64_def{ };
-  ::fill_win32_filefunc64W(&filefunc);
-  m_zip = ::zipOpen2_64(m_filename.wstring().c_str(),
-    APPEND_STATUS_CREATE, nullptr, &filefunc);
-# else
-  m_zip = ::zipOpen(m_filename.c_str(), APPEND_STATUS_CREATE);
-#endif
-  if (!m_zip)
+  if (!reopen(false))
     return false;
   
   start_thread();
@@ -202,23 +193,21 @@ void ArchiveWriter::move_on_close(std::filesystem::path filename, bool overwrite
 }
 
 bool ArchiveWriter::close() {
-  if (!m_zip)
-    return true;
-
-  finish_thread();
-
-  ::zipClose(m_zip, nullptr);
-  m_zip = nullptr;
-
-  if (m_move_on_close.empty())
-    return true;
-
-  const auto move_on_close = resolve_collision(m_move_on_close, m_overwrite ?
-    MoveCollisionResolution::overwrite : MoveCollisionResolution::rename);
-  if (move_on_close.empty())
+  if (m_filename.empty())
     return false;
 
-  return move_file(m_filename, move_on_close);
+  finish_thread();
+  do_close();
+
+  auto filename = std::exchange(m_filename, { });
+  if (!m_move_on_close.empty()) {
+    const auto move_on_close = resolve_collision(m_move_on_close, m_overwrite ?
+      MoveCollisionResolution::overwrite : MoveCollisionResolution::rename);
+    if (move_on_close.empty())
+      return false;
+    return move_file(filename, move_on_close);
+  }
+  return true;
 }
 
 bool ArchiveWriter::contains(const std::string& filename) const {
@@ -238,32 +227,65 @@ void ArchiveWriter::async_write(const std::string& filename, ByteView data,
   if (!update_filenames(filename))
     return on_complete(false);
 
-  auto tasks_lock = std::unique_lock(m_tasks_mutex);
-  m_tasks.emplace_back(
-    [this, filename, data, modification_time, 
-     on_complete = std::move(on_complete)]() {
-      on_complete(do_write(filename, data, modification_time));
-    });
-  if (m_tasks.size() == 1) {
-    tasks_lock.unlock();
-    m_tasks_signal.notify_one();
-  }
+  insert_task([this, filename, data, modification_time,
+               on_complete = std::move(on_complete)]() {
+    on_complete(do_write(filename, data, modification_time));
+  });
+}
+
+void ArchiveWriter::async_read(const std::string& filename,
+    std::function<void(ByteVector, time_t)>&& on_complete) {
+  insert_task([this, filename, on_complete = std::move(on_complete)]() {
+    // TODO:
+    const auto time = time_t{ };
+    on_complete(do_read(filename), time);
+  });
 }
 
 bool ArchiveWriter::update_filenames(const std::string& filename) {
-  if (starts_with(filename, "/"))
+  if (filename.empty() || starts_with(filename, "/"))
     return false;
-  
   if (m_filenames.count(filename) > 0)
     return false;
   m_filenames.insert(filename);
   return true;
 }
 
+void ArchiveWriter::do_close() {
+  if (m_reading)
+    ::unzClose(m_zip);
+  else
+    ::zipClose(m_zip, nullptr);
+  m_zip = nullptr;
+}
+
+bool ArchiveWriter::reopen(bool for_reading) {
+  if (m_zip && for_reading == m_reading)
+    return true;
+  const auto write_mode =
+    (m_zip ? APPEND_STATUS_ADDINZIP : APPEND_STATUS_CREATE);
+  do_close();
+  m_reading = for_reading;
+
+#if defined(_WIN32)
+  auto filefunc = zlib_filefunc64_def{ };
+  ::fill_win32_filefunc64W(&filefunc);
+  m_zip = (m_reading ?
+    ::unzOpen2_64(m_filename.wstring().c_str(), &filefunc) :
+    ::zipOpen2_64(m_filename.wstring().c_str(),
+      write_mode, nullptr, &filefunc));
+# else
+  m_zip = (m_reading ?
+    ::unzOpen64(m_filename.c_str()) :
+    ::zipOpen(m_filename.c_str(), write_mode));
+#endif
+  return (m_zip != nullptr);
+}
+
 bool ArchiveWriter::do_write(const std::string& filename, ByteView data, 
     time_t modification_time) {
   auto lock = std::lock_guard(m_zip_mutex);
-  if (!m_zip)
+  if (!reopen(false))
     return false;
 
   if (!modification_time)
@@ -290,6 +312,35 @@ bool ArchiveWriter::do_write(const std::string& filename, ByteView data,
     static_cast<unsigned int>(data.size()));
   ::zipCloseFileInZip(m_zip);
   return true;
+}
+
+
+ByteVector ArchiveWriter::do_read(const std::string& filename) {
+  auto lock = std::lock_guard(m_zip_mutex);
+  if (!reopen(true))
+    return { };
+
+  if (::unzLocateFile(m_zip, filename.c_str(), 0) != UNZ_OK ||
+      ::unzOpenCurrentFile(m_zip) != UNZ_OK)
+    return { };
+
+  auto info = unz_file_info{ };
+  ::unzGetCurrentFileInfo(m_zip, &info,
+    nullptr, 0, nullptr, 0, nullptr, 0);
+  auto buffer = ByteVector(info.uncompressed_size);
+  ::unzReadCurrentFile(m_zip, buffer.data(),
+    static_cast<unsigned int>(info.uncompressed_size));
+  ::unzCloseCurrentFile(m_zip);
+  return buffer;
+}
+
+void ArchiveWriter::insert_task(std::function<void()>&& task) {
+  auto tasks_lock = std::unique_lock(m_tasks_mutex);
+  m_tasks.emplace_back(std::move(task));
+  if (m_tasks.size() == 1) {
+    tasks_lock.unlock();
+    m_tasks_signal.notify_one();
+  }
 }
 
 void ArchiveWriter::start_thread() {

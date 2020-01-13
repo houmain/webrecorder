@@ -204,6 +204,9 @@ void Logic::handle_request(Server::Request request) {
   if (m_host_blocker && m_host_blocker->should_block(url))
     return serve_blocked(request, url);
 
+  if (serve_from_cache(request, url))
+    return;
+
   auto cache_info = std::optional<CacheInfo>{ };
   if (m_settings.validation_policy != ValidationPolicy::never)
     cache_info = get_cache_info(request, url);
@@ -283,6 +286,24 @@ std::optional<CacheInfo> Logic::get_cache_info(const Server::Request& request,
     cache_info.etag = it->second;
 
   return cache_info;
+}
+
+bool Logic::serve_from_cache(Server::Request& request, const std::string& url) {
+  auto lock = std::lock_guard(m_write_mutex);
+  auto identifying_url = get_identifying_url(url, request.data());
+  const auto filename = to_local_filename(identifying_url);
+  if (m_archive_writer && m_archive_writer->contains(filename)) {
+    auto entry = m_header_writer.read(identifying_url);
+    m_archive_writer->async_read(filename,
+      [this, url, entry,
+       request = std::make_shared<Server::Request>(std::move(request))
+      ](ByteVector data, time_t modification_time) mutable {
+        serve_file(*request, url, entry->status_code,
+          entry->header, data, modification_time);
+      });
+    return true;
+  }
+  return false;
 }
 
 bool Logic::serve_from_archive(Server::Request& request,
