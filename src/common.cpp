@@ -97,6 +97,10 @@ std::string to_local_filename(std::string url, size_t max_length) {
   if (auto i = url.find("://"); i != std::string::npos)
     url.replace(i, 3, "/");
 
+  // normalize // to /
+  for (auto i = url.find("//"); i != std::string::npos; i = url.find("//"))
+    url.replace(i, 2, "/");
+
   // add missing filename
   if (url.back() == '/')
     url += "index";
@@ -127,8 +131,8 @@ std::string get_legal_filename(const std::string& filename) {
         case '/': return 0x2571; // BOX DRAWINGS LIGHT DIAGONAL UPPER RIGHT TO LOWER LEFT
 #if 1 || defined(_WIN32)
         case '\\':return 0x2572; // BOX DRAWINGS LIGHT DIAGONAL UPPER LEFT TO LOWER RIGHT
-        case '<': return 0x02C2; // MODIFIER LETTER LEFT ARROWHEAD
-        case '>': return 0x02C3; // MODIFIER LETTER RIGHT ARROWHEAD
+        case '<': return 0x27E8; // MATHEMATICAL LEFT ANGLE BRACKET
+        case '>': return 0x27E9; // MATHEMATICAL RIGHT ANGLE BRACKET
         case ':': return 0xA789; // MODIFIER LETTER COLON
         case '"': return 0x02EE; // MODIFIER LETTER DOUBLE APOSTROPHE
         case '|': return 0x2223; // DIVIDES

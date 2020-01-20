@@ -107,6 +107,7 @@ void HtmlPatcher::parse_html() {
       case GUMBO_TAG_FRAME:
       case GUMBO_TAG_IFRAME:
       case GUMBO_TAG_EMBED:
+      case GUMBO_TAG_INPUT:
         link_attribute = "src";
         break;
       case GUMBO_TAG_SCRIPT:

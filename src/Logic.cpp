@@ -333,7 +333,8 @@ bool Logic::serve_from_archive(Server::Request& request,
 }
 
 void Logic::handle_error(Server::Request, std::error_code error) {
-  log(Event::error, get_message_utf8(error));
+  if (const auto message = get_message_utf8(error); !message.empty())
+    log(Event::error, message);
 }
 
 void Logic::handle_response(Server::Request& request,
@@ -418,12 +419,13 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
   auto patched_data = std::optional<std::string>();
   if (!data.empty() && iequals_any(mime_type, "text/html", "text/css")) {
     const auto patcher = HtmlPatcher(m_server_base, url, std::string(mime_type),
-      convert_charset(data, charset, "utf-8"),
+      convert_charset(data, (charset.empty() ? "utf-8" : charset), "utf-8"),
       m_follow_link_regex,
       m_cookie_store.get_cookies_list(url),
       response_time);
 
-    patched_data.emplace(convert_charset(patcher.get_patched(), "utf-8", charset));
+    patched_data.emplace(
+    convert_charset(patcher.get_patched(), "utf-8", (charset.empty() ? "utf-8" : charset)));
     data = as_byte_view(patched_data.value());
 
     if (!content_length.empty())

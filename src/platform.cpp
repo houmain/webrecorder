@@ -39,16 +39,12 @@ inline std::optional<std::string> convert_charset_iconv(std::string_view string,
 #endif
 
 std::string convert_charset(std::string data, std::string_view from, std::string_view to) {
-  if (from.empty())
-    from = "utf-8";
   if (!iequals(from, to))
     return convert_charset(as_byte_view(data), from, to);
   return data;
 }
 
 std::string convert_charset(ByteView data, std::string_view from, std::string_view to) {
-  if (from.empty())
-    from = "utf-8";
   if (!iequals(from, to)) {
 #if defined(USE_ICONV)
     if (auto result = convert_charset_iconv(as_string_view(data), from, to))
@@ -92,6 +88,8 @@ namespace {
 } // namespace
 
 std::string get_message_utf8(std::error_code error) {
+  if (error.value() == 2) // End of File
+    return { };
   return error.message();
 }
 

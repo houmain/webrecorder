@@ -17,16 +17,21 @@ void tests() {
   eq(to_local_filename("http://www.a.com/file.txt"), "http/www.a.com/file.txt");
   eq(to_local_filename("http://www.a.com/sub"), "http/www.a.com/sub");
   eq(to_local_filename("http://www.a.com/sub/"), "http/www.a.com/sub/index");
+  eq(to_local_filename("http://www.a.com//file.txt"), "http/www.a.com/file.txt");
+  eq(to_local_filename("http://www.a.com/sub//"), "http/www.a.com/sub/index");
 
   eq(filename_from_url("http://www.a.com"), "www.a.com");
   eq(filename_from_url("http://www.a.com/"), "www.a.com");
   eq(filename_from_url("http://www.a.com/file.txt"), "www.a.com╱file.txt");
   eq(filename_from_url("http://www.a.com/sub"), "www.a.com╱sub");
   eq(filename_from_url("http://www.a.com/sub/"), "www.a.com╱sub");
+  eq(filename_from_url("http://www.a.com//file.txt"), "www.a.com╱file.txt");
+  eq(filename_from_url("http://www.a.com/sub//"), "www.a.com╱sub");
 
   eq(url_from_input("http://www.a.com"), "http://www.a.com");
   eq(url_from_input("https://www.a.com"), "https://www.a.com");
   eq(url_from_input("www.a.com"), "http://www.a.com");
+  eq(url_from_input("www.a.com/file.txt"), "http://www.a.com/file.txt");
 
   eq(to_relative_url("http://www.a.com/", "http://www.a.com"), "/");
   eq(to_relative_url("http://www.a.com/file.txt", "http://www.a.com"), "/file.txt");

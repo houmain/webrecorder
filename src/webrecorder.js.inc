@@ -1,6 +1,8 @@
 return R"(
 ;(function (document) {
   const urlAttributes = ['href', 'src', 'srcset', 'action', 'data']
+  const styleUrlAttributes = ['background', 'backgroundImage',
+    'borderImage', 'borderImageSource', 'listStyle', 'listStyleImage']
   const urlElements = ['a', 'img', 'script', 'link', 'iframe', 'form', 'input',
     'source', 'embed', 'object', 'audio', 'video']
 
@@ -53,6 +55,14 @@ return R"(
     return url
   }
 
+  function patchStyleUrl (url) {
+    const match = url.match(/url\('([^']+)'\)/) || url.match(/url\(([^\)]+)\)/)
+    if (match) {
+      url = url.replace(match[1], patchUrl(match[1]))
+    }
+    return url
+  }
+
   if (false) {
     const patchUrl_ = patchUrl
     patchUrl = function (url, isLink) {
@@ -77,6 +87,16 @@ return R"(
     if (attrib) {
       Object.defineProperty(prototype, attribute, {
         set: function (value) { attrib.set.call(this, patchUrl(value, isLink)) },
+        get: function (value) { return attrib.get.call(this) }
+      })
+    }
+  }
+
+  function patchStyleSetter (prototype, attribute) {
+    const attrib = Object.getOwnPropertyDescriptor(prototype, attribute)
+    if (attrib) {
+      Object.defineProperty(prototype, attribute, {
+        set: function (value) { attrib.set.call(this, patchStyleUrl(value)) },
         get: function (value) { return attrib.get.call(this) }
       })
     }
@@ -247,6 +267,10 @@ return R"(
     for (const attribute of urlAttributes) {
       patchSetter(prototype, attribute, (element === 'a'))
     }
+  }
+  var style = Object.getPrototypeOf(document.createElement('div').style)
+  for (const attribute of styleUrlAttributes) {
+    patchStyleSetter(style, attribute)
   }
 
   // use observer to patch innerHTML, document.write, iframe... afterwards
