@@ -5,6 +5,7 @@
 #include "libs/minizip/zip.h"
 #include <ctime>
 #include <filesystem>
+#include <string>
 
 #if defined(_WIN32)
 # if !defined(UNICODE)

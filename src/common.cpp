@@ -47,10 +47,6 @@ std::string_view as_string_view(ByteView data) {
   return { begin, static_cast<std::string_view::size_type>(data.size()) };
 }
 
-const std::string& to_string(StatusCode status_code) {
-  return SimpleWeb::status_code(status_code);
-}
-
 bool iequals(std::string_view s1, std::string_view s2) {
   return s1.size() == s2.size() &&
     std::equal(s1.begin(), s1.end(), s2.begin(),

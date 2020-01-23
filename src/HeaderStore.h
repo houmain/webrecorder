@@ -1,6 +1,10 @@
 #pragma once
 
 #include "common.h"
+#include "libs/SimpleWeb/utility.hpp"
+
+using StatusCode = SimpleWeb::StatusCode;
+using Header = SimpleWeb::CaseInsensitiveMultimap;
 
 class HeaderStore final {
 public:

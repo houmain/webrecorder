@@ -1,7 +1,11 @@
 #pragma once
 
+#include "libs/SimpleWeb/utility.hpp"
 #include "common.h"
 #include <functional>
+
+using StatusCode = SimpleWeb::StatusCode;
+using Header = SimpleWeb::CaseInsensitiveMultimap;
 
 class Server final {
 public:

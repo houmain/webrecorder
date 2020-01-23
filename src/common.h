@@ -1,10 +1,9 @@
 #pragma once
 
 #include "libs/nonstd/span.hpp"
-#include "libs/SimpleWeb/utility.hpp"
+#include <vector>
+#include <string>
 
-using StatusCode = SimpleWeb::StatusCode;
-using Header = SimpleWeb::CaseInsensitiveMultimap;
 using ByteVector = std::vector<std::byte>;
 using ByteView = nonstd::span<const std::byte>;
 using StringViewPair = std::pair<std::string_view, std::string_view>;
@@ -18,7 +17,6 @@ struct LStringView : std::string_view {
 
 std::string format_time(time_t time);
 time_t parse_time(const std::string& string);
-const std::string& to_string(StatusCode status_code);
 bool starts_with(std::string_view str, std::string_view with);
 bool ends_with(std::string_view str, std::string_view with);
 std::string_view trim(LStringView str);

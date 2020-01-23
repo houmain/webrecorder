@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include <mutex>
+#include <map>
 
 class CookieStore final {
 public:
