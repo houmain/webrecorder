@@ -4,7 +4,6 @@
 #include <regex>
 
 bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
-
   for (auto i = 1; i < argc; i++) {
     const auto argument = std::string_view(argv[i]);
     if (argument == "-i") {
@@ -116,51 +115,57 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
       return false;
     }
   }
+
+  if (settings.filename.empty())
+    return false;
+
   return true;
 }
 
-void print_help_message(std::ostream& os, const char* argv0) {
+void print_help_message(const char* argv0) {
   auto program = std::string(argv0);
   if (auto i = program.rfind('/'); i != std::string::npos)
     program = program.substr(i + 1);
   if (auto i = program.rfind('.'); i != std::string::npos)
     program = program.substr(0, i);
 
-  os << program
+  const auto version =
 #if __has_include("_version.h")
-    << " " <<
 # include "_version.h"
 #endif
-    << " (c) 2019 by Albert Kalchmair\n"
-    << "\n"
-    << "Usage: " << program << " [-options] [URL|FILE]\n"
-      "  -i <URL>    set initial request URL.\n"
-      "  -o <FILE>   set read/write filename.\n"
-      "  -f <POLICY> follow link policy:\n"
-      "                N  none (default)\n"
-      "                H  same hostname\n"
-      "                D  same second-level domain\n"
-      "                P  same path\n"
-      "                A  all\n"
-      "  -v <POLICY> validation policy:\n"
-      "                N  never (default)\n"
-      "                E  when expired\n"
-      "                R  when expired on reload\n"
-      "                A  always\n"
-      "  -b <FILE>   add host block list.\n"
-      "  -p <PROXY>  set a HTTP proxy (host:port).\n"
-      "  -d <FLAGS>  disable (enabled by default):\n"
-      "                W  writing to file\n"
-      "                R  reading from file\n"
-      "                A  appending\n"
-      "                D  downloading\n"
-      "                B  opening of browser\n"
-      "  -e <FLAGS>  enable (disabled by default):\n"
-      "                T  generate filename from title\n"
-      "  -h, --help print this help.\n"
-      "\n"
-      "All Rights Reserved.\n"
-      "This program comes with absolutely no warranty.\n"
-      "See the GNU General Public License, version 3 for details.\n"
-    << std::endl;
+    "";
+
+  printf(
+    "webrecorder %s (c) 2019-2020 by Albert Kalchmair\n"
+    "\n"
+    "Usage: %s [-options] [URL|FILE]\n"
+    "  -i <URL>    set initial request URL.\n"
+    "  -o <FILE>   set read/write filename.\n"
+    "  -f <POLICY> follow link policy:\n"
+    "                N  none (default)\n"
+    "                H  same hostname\n"
+    "                D  same second-level domain\n"
+    "                P  same path\n"
+    "                A  all\n"
+    "  -v <POLICY> validation policy:\n"
+    "                N  never (default)\n"
+    "                E  when expired\n"
+    "                R  when expired on reload\n"
+    "                A  always\n"
+    "  -b <FILE>   add host block list.\n"
+    "  -p <PROXY>  set a HTTP proxy (host:port).\n"
+    "  -d <FLAGS>  disable (enabled by default):\n"
+    "                W  writing to file\n"
+    "                R  reading from file\n"
+    "                A  appending\n"
+    "                D  downloading\n"
+    "                B  opening of browser\n"
+    "  -e <FLAGS>  enable (disabled by default):\n"
+    "                T  generate filename from title\n"
+    "  -h, --help  print this help.\n"
+    "\n"
+    "All Rights Reserved.\n"
+    "This program comes with absolutely no warranty.\n"
+    "See the GNU General Public License, version 3 for details.\n"
+    "\n", version, program.c_str());
 }

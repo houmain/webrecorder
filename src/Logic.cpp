@@ -5,6 +5,7 @@
 #include "HostBlocker.h"
 #include "platform.h"
 #include <random>
+#include <sstream>
 
 namespace {
   const auto basic_js_header = Header{ { "Content-Type", "text/javascript" } };
@@ -12,10 +13,12 @@ namespace {
   std::string generate_id(int length = 8) {
     auto rand = std::random_device();
     auto generator = std::mt19937(rand());
-    auto distribution = std::uniform_int_distribution<>(0, 255);
+    auto half = std::uniform_int_distribution<>(0, 127);
+    auto full = std::uniform_int_distribution<>(0, 255);
     auto ss = std::stringstream();
     for (auto i = 0; i < length; ++i)
-      ss << std::hex << std::setfill('0') << std::setw(2) << distribution(generator);
+      ss << std::hex << std::setfill('0') << std::setw(2) <<
+        (i == 0 ? half(generator) : full(generator));
     return ss.str();
   }
 

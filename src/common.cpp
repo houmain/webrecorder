@@ -73,8 +73,9 @@ std::string_view trim(LStringView str) {
 }
 
 std::string_view unquote(LStringView str) {
-  if (str.size() >= 2 && str.front() == '"' && str.back() == '"')
-    return str.substr(1, str.size() - 2);
+  if (str.size() >= 2 && str.front() == str.back())
+    if (str.front() == '"' || str.front() == '\'')
+      return str.substr(1, str.size() - 2);
   return str;
 }
 

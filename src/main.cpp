@@ -16,9 +16,8 @@ int run(int argc, const char* argv[]) noexcept try {
 #endif
 
   auto settings = Settings{ };
-  if (!interpret_commandline(settings, argc, argv) ||
-      settings.filename.empty()) {
-    print_help_message(std::cout, argv[0]);
+  if (!interpret_commandline(settings, argc, argv)) {
+    print_help_message(argv[0]);
     return 1;
   }
 
@@ -45,7 +44,6 @@ int run(int argc, const char* argv[]) noexcept try {
     open_browser(local);
 
   server.run();
-
   return 0;
 }
 catch (const std::exception& ex) {

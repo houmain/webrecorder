@@ -36,4 +36,4 @@ struct Settings {
 };
 
 bool interpret_commandline(Settings& settings, int argc, const char* argv[]);
-void print_help_message(std::ostream& os, const char* argv0);
+void print_help_message(const char* argv0);
