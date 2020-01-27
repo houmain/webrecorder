@@ -9,6 +9,16 @@
 namespace {
   const auto basic_js_header = Header{ { "Content-Type", "text/javascript" } };
 
+  std::string generate_id(int length = 8) {
+    auto rand = std::random_device();
+    auto generator = std::mt19937(rand());
+    auto distribution = std::uniform_int_distribution<>(0, 255);
+    auto ss = std::stringstream();
+    for (auto i = 0; i < length; ++i)
+      ss << std::hex << std::setfill('0') << std::setw(2) << distribution(generator);
+    return ss.str();
+  }
+
   std::filesystem::path generate_temporary_filename() {
     auto rand = std::random_device();
     auto filename = std::string("webrecorder_");
@@ -126,6 +136,8 @@ Logic::Logic(Settings* settings, std::unique_ptr<HostBlocker> host_blocker)
 
   if (m_settings.read) {
     m_archive_reader = std::move(archive_reader);
+    if (auto data = m_archive_reader->read("uid"); !data.empty())
+      m_uid = std::string(as_string_view(data));
     if (auto data = m_archive_reader->read("headers"); !data.empty())
       m_header_reader.deserialize(as_string_view(data));
     if (auto data = m_archive_reader->read("cookies"); !data.empty())
@@ -163,6 +175,9 @@ Logic::~Logic() {
   m_archive_reader.reset();
 
   if (m_archive_writer) {
+    if (m_uid.empty())
+      m_uid = generate_id();
+    m_archive_writer->write("uid", as_byte_view(m_uid));
     m_archive_writer->write("headers", as_byte_view(m_header_writer.serialize()));
     m_archive_writer->write("cookies", as_byte_view(m_cookie_store.serialize()));
 

@@ -54,6 +54,7 @@ private:
   std::string apply_strict_transport_security(std::string url) const;
 
   // immutable
+  std::string m_uid;
   Settings& m_settings;
   std::string m_follow_link_regex;
   std::unique_ptr<ArchiveReader> m_archive_reader;
