@@ -32,6 +32,8 @@ bool iequals_any(T&& a, S&&... b) {
 
 StringViewPair split_content_type(std::string_view content_type);
 std::string get_content_type(std::string_view mime_type, std::string_view charset);
+std::string convert_charset(std::string data, std::string_view from, std::string_view to);
+std::string convert_charset(ByteView data, std::string_view from, std::string_view to);
 
 std::string get_hash(ByteView in);
 std::string get_legal_filename(const std::string& filename);

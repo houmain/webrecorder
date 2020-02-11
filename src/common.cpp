@@ -9,6 +9,58 @@
 extern "C" int siphash(const uint8_t* in, const size_t inlen,
   const uint8_t* k, uint8_t* out, const size_t outlen);
 
+#if __has_include(<iconv.h>)
+# define USE_ICONV
+#endif
+
+#if defined(USE_ICONV)
+# include <iconv.h>
+
+inline std::optional<std::string> convert_charset_iconv(std::string_view string,
+    std::string_view from, std::string_view to) {
+  const auto error = ~size_t{ };
+
+  const auto conv = ::iconv_open(std::string(to).c_str(), std::string(from).c_str());
+  if (reinterpret_cast<uintptr_t>(conv) == error)
+    return std::nullopt;
+
+  auto source_pointer = const_cast<char*>(string.data());
+  auto source_size = string.size();
+  auto dest = std::string();
+  auto dest_buffer = std::vector<char>(1024);
+  while (source_size > 0) {
+    auto dest_pointer = dest_buffer.data();
+    auto dest_size = dest_buffer.size();
+    if (::iconv(conv, &source_pointer,
+        &source_size, &dest_pointer, &dest_size) == error) {
+      if (errno != E2BIG) {
+        ++source_pointer;
+        --source_size;
+      }
+    }
+    dest.append(dest_buffer.data(), dest_buffer.size() - dest_size);
+  }
+  ::iconv_close(conv);
+  return { std::move(dest) };
+}
+#endif
+
+std::string convert_charset(std::string data, std::string_view from, std::string_view to) {
+  if (!iequals(from, to))
+    return convert_charset(as_byte_view(data), from, to);
+  return data;
+}
+
+std::string convert_charset(ByteView data, std::string_view from, std::string_view to) {
+  if (!iequals(from, to)) {
+#if defined(USE_ICONV)
+    if (auto result = convert_charset_iconv(as_string_view(data), from, to))
+      return std::move(result.value());
+#endif
+  }
+  return std::string(as_string_view(data));
+}
+
 std::string get_hash(ByteView in) {
   auto out = uint64_t{ };
   auto k = std::array<uint8_t, 16>{ };

@@ -33,8 +33,6 @@ void log(Event event, Args&&... args) {
   (write_output(args), ...);
 }
 
-std::string convert_charset(std::string data, std::string_view from, std::string_view to);
-std::string convert_charset(ByteView data, std::string_view from, std::string_view to);
 void open_browser(const std::string& url);
 
 extern int run(int argc, const char* argv[]) noexcept;
