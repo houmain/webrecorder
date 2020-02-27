@@ -166,14 +166,14 @@ Logic::~Logic() {
   if (m_settings.append && m_archive_reader && m_archive_writer)
     for (const auto& [identifying_url, entry] : m_header_reader.entries()) {
       const auto filename = to_local_filename(identifying_url);
-      if (!m_archive_writer->contains(filename)) {
-        if (auto data = m_archive_reader->read(filename); !data.empty()) {
-          m_header_writer.write(identifying_url, entry.status_code, entry.header);
-          const auto modification_time = 
-            m_archive_reader->get_modification_time(filename);
-          m_archive_writer->write(filename, data, modification_time);
-        }
-      }
+      if (!m_archive_writer->contains(filename))
+        if (!m_host_blocker || !m_host_blocker->should_block(identifying_url))
+          if (auto data = m_archive_reader->read(filename); !data.empty()) {
+            m_header_writer.write(identifying_url, entry.status_code, entry.header);
+            const auto modification_time =
+              m_archive_reader->get_modification_time(filename);
+            m_archive_writer->write(filename, data, modification_time);
+          }
     }
   m_archive_reader.reset();
 
