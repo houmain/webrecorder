@@ -9,6 +9,8 @@
 #include <mutex>
 #include <condition_variable>
 
+class LossyCompressor;
+
 class ArchiveReader final {
 public:
   ArchiveReader() = default;
@@ -35,18 +37,20 @@ private:
 
 class ArchiveWriter final {
 public:
-  ArchiveWriter() = default;
+  ArchiveWriter();
   ArchiveWriter(const ArchiveWriter&) = delete;
   ArchiveWriter& operator=(const ArchiveWriter&) = delete;
   ~ArchiveWriter();
 
+  void set_lossy_compressor(std::unique_ptr<LossyCompressor> lossy_compressor);
   bool open(std::filesystem::path filename);
   void move_on_close(std::filesystem::path filename, bool overwrite);
   bool close();
   bool write(const std::string& filename, ByteView data, 
-    time_t modification_time = 0);
+    time_t modification_time = 0, bool allow_lossy_compression = false);
   void async_write(const std::string& filename, ByteView data,
-    time_t modification_time, std::function<void(bool)>&& on_complete);
+    time_t modification_time, bool allow_lossy_compression,
+    std::function<void(bool)>&& on_complete);
   bool contains(const std::string& filename) const;
   void async_read(const std::string& filename,
     std::function<void(ByteVector, time_t)>&& on_complete);
@@ -56,7 +60,7 @@ private:
   bool reopen(bool for_reading);
   void do_close();
   bool do_write(const std::string& filename, ByteView data, 
-    time_t modification_time);
+    time_t modification_time, bool allow_lossy_compression);
   ByteVector do_read(const std::string& filename);
 
   void insert_task(std::function<void()>&& task);
@@ -70,6 +74,7 @@ private:
   std::set<std::string> m_filenames;
 
   std::mutex m_zip_mutex;
+  std::unique_ptr<LossyCompressor> m_lossy_compressor;
   void* m_zip{ };
   bool m_reading{ };
 

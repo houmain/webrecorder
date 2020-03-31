@@ -3,6 +3,7 @@
 #include "Settings.h"
 #include "HtmlPatcher.h"
 #include "HostList.h"
+#include "LossyCompressor.h"
 #include "platform.h"
 #include <random>
 #include <sstream>
@@ -157,6 +158,10 @@ Logic::Logic(Settings* settings, std::unique_ptr<HostList> blocked_hosts)
     }
     m_archive_writer->move_on_close(m_settings.filename, true);
     m_archive_writer->write("url", as_byte_view(m_settings.url));
+
+    if (m_settings.allow_lossy_compression)
+      m_archive_writer->set_lossy_compressor(
+        std::make_unique<LossyCompressor>());
   }
 
   set_server_base(m_settings.url);
@@ -341,7 +346,8 @@ bool Logic::serve_from_archive(Server::Request& request,
   if (write_to_archive) {
     auto data_view = ByteView(data);
     async_write_file(identifying_url,
-      entry->status_code, entry->header, data_view, response_time,
+      entry->status_code, entry->header,
+      data_view, response_time, false,
       [data = std::move(data)](bool succeeded) {
         if (!succeeded)
           log(Event::writing_failed);
@@ -375,7 +381,7 @@ void Logic::handle_response(Server::Request& request,
   const auto& header = response.header();
   const auto& data = response.data();
   async_write_file(get_identifying_url(url, request.data()),
-    status_code, header, data, response_time,
+    status_code, header, data, response_time, true,
     [response = std::make_shared<Client::Response>(std::move(response))
     ](bool succeeded) {
       if (!succeeded)
@@ -490,14 +496,16 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
 
 void Logic::async_write_file(const std::string& identifying_url,
     StatusCode status_code, const Header& header, ByteView data,
-    time_t response_time, std::function<void(bool)>&& on_complete) {
+    time_t response_time, bool allow_lossy_compression,
+    std::function<void(bool)>&& on_complete) {
   auto lock = std::lock_guard(m_write_mutex);
   const auto filename = to_local_filename(identifying_url);
   if (m_archive_writer && !m_archive_writer->contains(filename)) {
     m_header_writer.write(identifying_url, status_code, header);
     if (!data.empty())
       return m_archive_writer->async_write(
-        filename, data, response_time, std::move(on_complete));
+        filename, data, response_time, allow_lossy_compression,
+        std::move(on_complete));
   }
   on_complete(true);
 }

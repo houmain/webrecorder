@@ -48,7 +48,8 @@ private:
     StatusCode status_code, const Header& header, ByteView data, time_t response_time);
   void async_write_file(const std::string& identifying_url,
     StatusCode status_code, const Header& header, ByteView data,
-    time_t response_time, std::function<void(bool)>&& on_complete);
+    time_t response_time, bool allow_lossy_compression,
+    std::function<void(bool)>&& on_complete);
   void set_filename_from_title(const std::string& title);
   void set_strict_transport_security(const std::string& url, bool include_subdomains);
   std::string apply_strict_transport_security(std::string url) const;

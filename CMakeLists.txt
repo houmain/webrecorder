@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.6)
 project(webrecorder)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
 set(GIT_COMMIT_LAST_TAG "unknown")
 find_package(Git)
@@ -26,6 +27,7 @@ set(SOURCES
     src/Server.cpp
     src/Settings.cpp
     src/HostList.cpp
+    src/LossyCompressor.cpp
     src/test.cpp
     libs/utf8/utf8.cpp
     libs/siphash/siphash.c
@@ -37,6 +39,13 @@ file(GLOB_RECURSE HEADERS include *.h *.hpp *.inc)
 
 link_libraries(gumbo z)
 add_compile_definitions(NOCRYPT UNICODE ASIO_STANDALONE USE_STANDALONE_ASIO)
+
+find_package(FreeImage)
+if(FreeImage_FOUND)
+		include_directories(${FreeImage_INCLUDE_DIRS})
+    link_libraries(${FreeImage_LIBRARIES})
+    add_compile_definitions(FreeImage_FOUND)
+endif()
 
 if(NOT MSVC)
     add_compile_options(-Wall -Wextra -Wsign-conversion)

@@ -3,6 +3,7 @@
 #include "common.h"
 #include "libs/minizip/unzip.h"
 #include "libs/minizip/zip.h"
+#include "LossyCompressor.h"
 #include <ctime>
 #include <filesystem>
 #include <string>
@@ -123,15 +124,14 @@ time_t ArchiveReader::get_modification_time(const std::string& filename) const {
   ::unzGetCurrentFileInfo(unzip, &info,
     nullptr, 0, nullptr, 0, nullptr, 0);
 
-  auto time = std::tm{
-    static_cast<int>(info.tmu_date.tm_sec),
-    static_cast<int>(info.tmu_date.tm_min),
-    static_cast<int>(info.tmu_date.tm_hour),
-    static_cast<int>(info.tmu_date.tm_mday),
-    static_cast<int>(info.tmu_date.tm_mon),
-    static_cast<int>(info.tmu_date.tm_year) - 1900,
-    0, 0, -1
-  };
+  auto time = std::tm{ };
+  time.tm_sec = static_cast<int>(info.tmu_date.tm_sec);
+  time.tm_min = static_cast<int>(info.tmu_date.tm_min);
+  time.tm_hour = static_cast<int>(info.tmu_date.tm_hour);
+  time.tm_mday = static_cast<int>(info.tmu_date.tm_mday);
+  time.tm_mon = static_cast<int>(info.tmu_date.tm_mon);
+  time.tm_year = static_cast<int>(info.tmu_date.tm_year) - 1900;
+  time.tm_isdst = -1;
   return std::mktime(&time);
 }
 
@@ -172,6 +172,18 @@ void ArchiveReader::for_each_file(const std::function<void(std::string)>& callba
 
 //-------------------------------------------------------------------------
 
+ArchiveWriter::ArchiveWriter() = default;
+
+ArchiveWriter::~ArchiveWriter() {
+  close();
+}
+
+void ArchiveWriter::set_lossy_compressor(
+    std::unique_ptr<LossyCompressor> lossy_compressor) {
+  auto lock = std::lock_guard(m_zip_mutex);
+  m_lossy_compressor = std::move(lossy_compressor);
+}
+
 bool ArchiveWriter::open(std::filesystem::path filename) {
   if (!m_filename.empty() || filename.empty())
     return false;
@@ -179,13 +191,9 @@ bool ArchiveWriter::open(std::filesystem::path filename) {
   m_filename = std::move(filename);
   if (!reopen(false))
     return false;
-  
+
   start_thread();
   return true;
-}
-
-ArchiveWriter::~ArchiveWriter() {
-  close();
 }
 
 void ArchiveWriter::move_on_close(std::filesystem::path filename, bool overwrite) {
@@ -216,21 +224,23 @@ bool ArchiveWriter::contains(const std::string& filename) const {
 }
 
 bool ArchiveWriter::write(const std::string& filename, ByteView data, 
-    time_t modification_time) {
+    time_t modification_time, bool allow_lossy_compression) {
   if (!update_filenames(filename))
     return false;
 
-  return do_write(filename, data, modification_time);
+  return do_write(filename, data, modification_time, allow_lossy_compression);
 }
 
 void ArchiveWriter::async_write(const std::string& filename, ByteView data,
-    time_t modification_time, std::function<void(bool)>&& on_complete) {
+    time_t modification_time, bool allow_lossy_compression,
+    std::function<void(bool)>&& on_complete) {
+
   if (!update_filenames(filename))
     return on_complete(false);
 
   insert_task([this, filename, data, modification_time,
-               on_complete = std::move(on_complete)]() {
-    on_complete(do_write(filename, data, modification_time));
+      allow_lossy_compression, on_complete = std::move(on_complete)]() {
+    on_complete(do_write(filename, data, modification_time, allow_lossy_compression));
   });
 }
 
@@ -284,10 +294,21 @@ bool ArchiveWriter::reopen(bool for_reading) {
 }
 
 bool ArchiveWriter::do_write(const std::string& filename, ByteView data, 
-    time_t modification_time) {
+    time_t modification_time, bool allow_lossy_compression) {
   auto lock = std::lock_guard(m_zip_mutex);
   if (!reopen(false))
     return false;
+
+  auto lossless_compression = is_likely_compressible(filename);
+
+  auto lossy_compressed_data = std::optional<ByteVector>();
+  if (allow_lossy_compression && m_lossy_compressor) {
+    lossy_compressed_data = m_lossy_compressor->try_compress(data);
+    if (lossy_compressed_data.has_value()) {
+      data = lossy_compressed_data.value();
+      lossless_compression = false;
+    }
+  }
 
   if (!modification_time)
     modification_time = std::time(nullptr);
@@ -304,9 +325,9 @@ bool ArchiveWriter::do_write(const std::string& filename, ByteView data,
     0, 0, 0,
   };
   if (::zipOpenNewFileInZip(m_zip, filename.c_str(),
-      &info, nullptr, 0, nullptr, 0, nullptr, Z_DEFLATED, 
-      is_likely_compressible(filename) ?
-        Z_DEFAULT_COMPRESSION : Z_NO_COMPRESSION) != ZIP_OK)
+      &info, nullptr, 0, nullptr, 0, nullptr,
+      Z_DEFLATED, (lossless_compression ?
+        Z_DEFAULT_COMPRESSION : Z_NO_COMPRESSION)) != ZIP_OK)
     return false;
   
   ::zipWriteInFileInZip(m_zip, data.data(),

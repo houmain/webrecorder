@@ -29,6 +29,7 @@ struct Settings {
   bool download{ true };
   bool open_browser{ true };
   bool filename_from_title{ false };
+  bool allow_lossy_compression{ false };
   bool frontend_mode{ false };
   bool verbose{ false };
   FollowLinkPolicy follow_link_policy{ FollowLinkPolicy::none };

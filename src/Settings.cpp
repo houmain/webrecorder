@@ -75,6 +75,7 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
       for (auto c = argv[i]; *c; ++c) {
         switch (*c) {
           case 'T': settings.filename_from_title = true; break;
+          case 'L': settings.allow_lossy_compression = true; break;
           default:
             return false;
         }
@@ -162,6 +163,7 @@ void print_help_message(const char* argv0) {
     "                B  opening of browser\n"
     "  -e <FLAGS>  enable (disabled by default):\n"
     "                T  generate filename from title\n"
+    "                L  allow lossy compression\n"
     "  -h, --help  print this help.\n"
     "\n"
     "All Rights Reserved.\n"
