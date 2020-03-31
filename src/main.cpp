@@ -3,7 +3,7 @@
 #include "Logic.h"
 #include "Settings.h"
 #include "HtmlPatcher.h"
-#include "HostBlocker.h"
+#include "HostList.h"
 #include "platform.h"
 #include <filesystem>
 
@@ -21,13 +21,13 @@ int run(int argc, const char* argv[]) noexcept try {
     return 1;
   }
 
-  auto host_blocker = std::make_unique<HostBlocker>();
+  auto blocked_hosts = std::make_unique<HostList>();
   for (const auto& file : settings.host_block_lists)
-    host_blocker->add_hosts_from_file(file);
-  if (!host_blocker->has_hosts())
-    host_blocker.reset();
+    blocked_hosts->add_hosts_from_file(file);
+  if (!blocked_hosts->has_hosts())
+    blocked_hosts.reset();
 
-  auto logic = Logic(&settings, std::move(host_blocker));
+  auto logic = Logic(&settings, std::move(blocked_hosts));
 
   using namespace std::placeholders;
   auto server = Server(

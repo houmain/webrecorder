@@ -25,7 +25,7 @@ set(SOURCES
     src/Logic.cpp
     src/Server.cpp
     src/Settings.cpp
-    src/HostBlocker.cpp
+    src/HostList.cpp
     src/test.cpp
     libs/utf8/utf8.cpp
     libs/siphash/siphash.c

@@ -1,10 +1,10 @@
 
-#include "HostBlocker.h"
+#include "HostList.h"
 #include "common.h"
 #include <fstream>
 #include <sstream>
 
-bool HostBlocker::add_hosts_from_file(const std::filesystem::path& filename) {
+bool HostList::add_hosts_from_file(const std::filesystem::path& filename) {
   auto file = std::ifstream(filename);
   if (!file.good())
     return false;
@@ -32,7 +32,7 @@ bool HostBlocker::add_hosts_from_file(const std::filesystem::path& filename) {
   return true;
 }
 
-bool HostBlocker::should_block(std::string_view url) const {
+bool HostList::contains(std::string_view url) const {
   auto domain = get_hostname_port(url);
   for (;;) {
     if (m_hash_set.find(domain) != m_hash_set.end())

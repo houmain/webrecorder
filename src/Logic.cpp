@@ -2,7 +2,7 @@
 #include "Logic.h"
 #include "Settings.h"
 #include "HtmlPatcher.h"
-#include "HostBlocker.h"
+#include "HostList.h"
 #include "platform.h"
 #include <random>
 #include <sstream>
@@ -118,9 +118,9 @@ namespace {
   }
 } // namespace
 
-Logic::Logic(Settings* settings, std::unique_ptr<HostBlocker> host_blocker)
+Logic::Logic(Settings* settings, std::unique_ptr<HostList> blocked_hosts)
   : m_settings(*settings),
-    m_host_blocker(std::move(host_blocker)),
+    m_blocked_hosts(std::move(blocked_hosts)),
     m_client(m_settings.proxy_server) {
 
   m_settings.filename = std::filesystem::u8path(
@@ -167,7 +167,7 @@ Logic::~Logic() {
     for (const auto& [identifying_url, entry] : m_header_reader.entries()) {
       const auto filename = to_local_filename(identifying_url);
       if (!m_archive_writer->contains(filename))
-        if (!m_host_blocker || !m_host_blocker->should_block(identifying_url))
+        if (!m_blocked_hosts || !m_blocked_hosts->contains(identifying_url))
           if (auto data = m_archive_reader->read(filename); !data.empty()) {
             m_header_writer.write(identifying_url, entry.status_code, entry.header);
             const auto modification_time =
@@ -219,7 +219,7 @@ void Logic::handle_request(Server::Request request) {
     return request.send_response(StatusCode::success_no_content, { }, { });
   }
 
-  if (m_host_blocker && m_host_blocker->should_block(url))
+  if (m_blocked_hosts && m_blocked_hosts->contains(url))
     return serve_blocked(request, url);
 
   if (serve_from_cache(request, url))

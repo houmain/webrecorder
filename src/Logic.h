@@ -10,7 +10,7 @@
 #include <optional>
 
 struct Settings;
-class HostBlocker;
+class HostList;
 
 struct CacheInfo {
   bool expired;
@@ -20,7 +20,7 @@ struct CacheInfo {
 
 class Logic final {
 public:
-  Logic(Settings* settings, std::unique_ptr<HostBlocker> host_blocker);
+  Logic(Settings* settings, std::unique_ptr<HostList> blocked_hosts);
   Logic(const Logic&) = delete;
   Logic& operator=(const Logic&) = delete;
   ~Logic();
@@ -58,7 +58,7 @@ private:
   Settings& m_settings;
   std::string m_follow_link_regex;
   std::unique_ptr<ArchiveReader> m_archive_reader;
-  std::unique_ptr<HostBlocker> m_host_blocker;
+  std::unique_ptr<HostList> m_blocked_hosts;
   HeaderStore m_header_reader;
 
   // only updated on main thread

@@ -4,11 +4,11 @@
 #include <unordered_set>
 #include <deque>
 
-class HostBlocker {
+class HostList {
 public:
   bool add_hosts_from_file(const std::filesystem::path& filename);
   bool has_hosts() const { return !m_hash_set.empty(); }
-  bool should_block(std::string_view url) const;
+  bool contains(std::string_view url) const;
 
 private:
   std::deque<std::string> m_hosts_files;
