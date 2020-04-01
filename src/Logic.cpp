@@ -119,9 +119,8 @@ namespace {
   }
 } // namespace
 
-Logic::Logic(Settings* settings, std::unique_ptr<HostList> blocked_hosts)
+Logic::Logic(Settings* settings)
   : m_settings(*settings),
-    m_blocked_hosts(std::move(blocked_hosts)),
     m_client(m_settings.proxy_server) {
 
   m_settings.filename = std::filesystem::u8path(
@@ -194,10 +193,20 @@ Logic::~Logic() {
   }
 }
 
-void Logic::setup(std::string local_server_url,
-           std::function<void()> start_threads_callback) {
+void Logic::set_local_server_url(std::string local_server_url) {
   m_local_server_base = get_scheme_hostname_port(local_server_url);
-  m_start_threads_callback = std::move(start_threads_callback);
+}
+
+void Logic::set_start_threads_callback(std::function<void()> callback) {
+  m_start_threads_callback = std::move(callback);
+}
+
+void Logic::set_blocked_hosts(std::unique_ptr<HostList> blocked_hosts) {
+  m_blocked_hosts = std::move(blocked_hosts);
+}
+
+void Logic::set_bypassed_hosts(std::unique_ptr<HostList> bypass_hosts) {
+  m_bypassed_hosts = std::move(bypass_hosts);
 }
 
 void Logic::set_server_base(const std::string& url) {
@@ -420,7 +429,6 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
         }
     }
     else {
-      log(Event::info, "starting io threads");
       auto start_threads = std::exchange(m_start_threads_callback, { });
       start_threads();
     }
@@ -442,9 +450,10 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
 
   auto patched_data = std::optional<std::string>();
   if (!data.empty() && iequals_any(mime_type, "text/html", "text/css")) {
-    const auto patcher = HtmlPatcher(m_server_base, url, std::string(mime_type),
+    const auto patcher = HtmlPatcher(
+      m_server_base, url, std::string(mime_type),
       convert_charset(data, (charset.empty() ? "utf-8" : charset), "utf-8"),
-      m_follow_link_regex,
+      m_follow_link_regex, m_bypassed_hosts.get(),
       m_cookie_store.get_cookies_list(url),
       response_time);
 
@@ -465,8 +474,7 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
   for (const auto& [name, value] : header)
     if (iequals(name, "Location")) {
       response_header.emplace(name,
-        to_relative_or_patch_to_absolute_url(
-          to_absolute_url(value, url), m_server_base));
+        patch_absolute_url(to_absolute_url(value, url), m_server_base));
     }
     else if (iequals(name, "Content-Type")) {
       response_header.emplace(name, content_type);

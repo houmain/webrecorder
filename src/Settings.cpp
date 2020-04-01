@@ -16,10 +16,17 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
         return false;
       settings.filename = std::filesystem::u8path(unquote(argv[i]));
     }
-    else if (argument == "-b") {
+    else if (argument == "-bl") {
       if (++i >= argc)
         return false;
-      settings.host_block_lists.push_back(std::filesystem::u8path(unquote(argv[i])));
+      settings.blocked_hosts_lists.push_back(
+        std::filesystem::u8path(unquote(argv[i])));
+    }
+    else if (argument == "-by") {
+      if (++i >= argc)
+        return false;
+      settings.bypassed_hosts_lists.push_back(
+        std::filesystem::u8path(unquote(argv[i])));
     }
     else if (argument == "-p") {
       if (++i >= argc)
@@ -153,7 +160,8 @@ void print_help_message(const char* argv0) {
     "                E  when expired\n"
     "                R  when expired on reload\n"
     "                A  always\n"
-    "  -b <FILE>   add host block list.\n"
+    "  -bl <FILE>  add host block list.\n"
+    "  -by <FILE>  add host bypass list.\n"
     "  -p <PROXY>  set a HTTP proxy (host:port).\n"
     "  -d <FLAGS>  disable (enabled by default):\n"
     "                W  writing to file\n"

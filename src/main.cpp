@@ -21,13 +21,19 @@ int run(int argc, const char* argv[]) noexcept try {
     return 1;
   }
 
-  auto blocked_hosts = std::make_unique<HostList>();
-  for (const auto& file : settings.host_block_lists)
-    blocked_hosts->add_hosts_from_file(file);
-  if (!blocked_hosts->has_hosts())
-    blocked_hosts.reset();
+  auto logic = Logic(&settings);
 
-  auto logic = Logic(&settings, std::move(blocked_hosts));
+  auto blocked_hosts = std::make_unique<HostList>();
+  for (const auto& file : settings.blocked_hosts_lists)
+    blocked_hosts->add_hosts_from_file(file);
+  if (blocked_hosts->has_hosts())
+    logic.set_blocked_hosts(std::move(blocked_hosts));
+
+  auto bypassed_hosts = std::make_unique<HostList>();
+  for (const auto& file : settings.bypassed_hosts_lists)
+    bypassed_hosts->add_hosts_from_file(file);
+  if (bypassed_hosts->has_hosts())
+    logic.set_bypassed_hosts(std::move(bypassed_hosts));
 
   using namespace std::placeholders;
   auto server = Server(
@@ -38,7 +44,8 @@ int run(int argc, const char* argv[]) noexcept try {
   const auto local = "http://127.0.0.1:" + std::to_string(server.port()) + path;
   log(Event::accept, local);
 
-  logic.setup(local, [&]() { server.run_threads(5); });
+  logic.set_local_server_url(local);
+  logic.set_start_threads_callback([&]() { server.run_threads(5); });
 
   if (settings.open_browser)
     open_browser(local);

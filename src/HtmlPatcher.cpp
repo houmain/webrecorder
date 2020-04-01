@@ -1,5 +1,6 @@
 ﻿
 #include "HtmlPatcher.h"
+#include "HostList.h"
 #include "gumbo.h"
 #include <stack>
 #include <cctype>
@@ -9,6 +10,15 @@
 
 std::string patch_absolute_url(std::string url) {
   return '/' + url;
+}
+
+std::string patch_absolute_url(std::string url, std::string_view base) {
+  // try to convert to relative
+  if (starts_with(url, base))
+    return url.substr(base.size());
+
+  // patch absolute to relative
+  return patch_absolute_url(std::move(url));
 }
 
 std::string_view unpatch_url(LStringView url) {
@@ -28,26 +38,21 @@ std::string_view get_patch_script() {
 #include "webrecorder.js.inc"
 }
 
-std::string to_relative_or_patch_to_absolute_url(std::string url, std::string_view base) {
-  // try to convert to relative
-  if (starts_with(url, base)) {
-    url = url.substr(base.size());
-  }
-  else {
-    // patch absolute to relative
-    url = patch_absolute_url(std::move(url));
-  }
-  return url;
-}
-
-HtmlPatcher::HtmlPatcher(std::string server_base, std::string base_url,
-      std::string mime_type, std::string data, std::string follow_link_pattern,
-      std::string cookies, time_t start_time)
+HtmlPatcher::HtmlPatcher(
+      std::string server_base,
+      std::string base_url,
+      std::string mime_type,
+      std::string data,
+      std::string follow_link_pattern,
+      const HostList* bypassed_hosts,
+      std::string cookies,
+      time_t start_time)
     : m_server_base(std::move(server_base)),
       m_mime_type(mime_type),
       m_data(std::move(data)),
       m_follow_link_pattern(follow_link_pattern),
       m_follow_link_regex(follow_link_pattern),
+      m_bypassed_hosts(bypassed_hosts),
       m_cookies(std::move(cookies)),
       m_start_time(start_time) {
 
@@ -218,6 +223,16 @@ void HtmlPatcher::update_base_url(std::string base_url) {
   m_base_url = std::move(base_url);
 }
 
+bool HtmlPatcher::should_patch_absolute_url(std::string_view url, bool is_anchor) const {
+  if (m_bypassed_hosts && m_bypassed_hosts->contains(url))
+    return false;
+
+  if (is_anchor)
+    return std::regex_match(url.begin(), url.end(), m_follow_link_regex);
+
+  return true;
+}
+
 void HtmlPatcher::patch_link(std::string_view at, bool is_anchor) {
   const auto link = get_link(at);
 
@@ -235,8 +250,9 @@ void HtmlPatcher::patch_link(std::string_view at, bool is_anchor) {
       return;
   }
 
-  if (!is_anchor || std::regex_match(url.begin(), url.end(), m_follow_link_regex))
-    url = to_relative_or_patch_to_absolute_url(std::move(url), m_server_base);
+  // conditionally patch to relative url
+  if (should_patch_absolute_url(url, is_anchor))
+    url = patch_absolute_url(std::move(url), m_server_base);
 
   patch(link, url);
 }

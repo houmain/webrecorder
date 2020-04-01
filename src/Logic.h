@@ -20,13 +20,18 @@ struct CacheInfo {
 
 class Logic final {
 public:
-  Logic(Settings* settings, std::unique_ptr<HostList> blocked_hosts);
+  explicit Logic(Settings* settings);
   Logic(const Logic&) = delete;
   Logic& operator=(const Logic&) = delete;
   ~Logic();
 
-  void setup(std::string local_server_url,
-             std::function<void()> start_threads_callback);
+  // only call on main thread
+  void set_local_server_url(std::string local_server_url);
+  void set_start_threads_callback(std::function<void()> callback);
+  void set_blocked_hosts(std::unique_ptr<HostList> blocked_hosts);
+  void set_bypassed_hosts(std::unique_ptr<HostList> bypassed_hosts);
+
+  // threadsafe
   void handle_request(Server::Request request);
   void handle_error(Server::Request request, std::error_code error);
 
@@ -54,19 +59,18 @@ private:
   void set_strict_transport_security(const std::string& url, bool include_subdomains);
   std::string apply_strict_transport_security(std::string url) const;
 
-  // immutable
-  std::string m_uid;
+  // only updated while single threaded
   Settings& m_settings;
+  std::string m_uid;
   std::string m_follow_link_regex;
   std::unique_ptr<ArchiveReader> m_archive_reader;
   std::unique_ptr<HostList> m_blocked_hosts;
+  std::unique_ptr<HostList> m_bypassed_hosts;
   HeaderStore m_header_reader;
-
-  // only updated on main thread
-  std::function<void()> m_start_threads_callback;
   std::string m_local_server_base;
   std::string m_server_base;
   std::string m_server_base_path;
+  std::function<void()> m_start_threads_callback;
 
   // threadsafe
   Client m_client;

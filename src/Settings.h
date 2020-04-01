@@ -21,7 +21,8 @@ enum class ValidationPolicy {
 struct Settings {
   std::string url;
   std::filesystem::path filename;
-  std::vector<std::filesystem::path> host_block_lists;
+  std::vector<std::filesystem::path> blocked_hosts_lists;
+  std::vector<std::filesystem::path> bypassed_hosts_lists;
   std::string proxy_server;
   bool write{ true };
   bool read{ true };

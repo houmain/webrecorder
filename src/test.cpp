@@ -1,5 +1,6 @@
 
 #include "common.h"
+#include "HtmlPatcher.h"
 #include <csignal>
 
 template<typename A, typename B>
@@ -150,4 +151,7 @@ void tests() {
   eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/sub/file"), "http://www.a.com:8080/sub/");
   eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/file?query"), "http://www.a.com:8080/");
   eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/file#fragment"), "http://www.a.com:8080/");
+
+  eq(patch_absolute_url("http://www.a.com/file?query"), "/http://www.a.com/file?query");
+  eq(patch_absolute_url("http://www.a.com/file?query", "http://www.a.com"), "/file?query");
 }
