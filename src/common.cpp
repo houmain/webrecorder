@@ -241,29 +241,7 @@ bool is_same_url(std::string_view a, std::string_view b) {
   return (a == b);
 }
 
-std::string to_absolute_url(std::string_view url, const std::string& relative_to) {
-  if (!is_relative_url(url))
-    return std::string(url);
-
-  const auto base_path_begin = get_scheme_hostname_port(relative_to).size();
-  const auto base = relative_to.substr(0, base_path_begin);
-  if (starts_with(url, "/")) {
-    if (starts_with(url, "//"))
-      return std::string(get_scheme(relative_to)) + ":" + std::string(url);
-    return base + std::string(url);
-  }
-
-  const auto base_path_end = get_scheme_hostname_port_path(relative_to).size();
-  auto path = relative_to.substr(base_path_begin, base_path_end - base_path_begin);
-
-  // remove filename
-  if (auto last_slash = path.rfind('/'); last_slash != std::string::npos)
-    path.resize(last_slash + 1);
-  else
-    path += '/';
-
-  path += std::string(url);
-
+std::string normalize_path(std::string path) {
   // remove ./ and ../
   replace_all(path, "/./", "/");
   for (;;) {
@@ -278,10 +256,36 @@ std::string to_absolute_url(std::string_view url, const std::string& relative_to
       path.erase(slash, it - slash + 3);
     }
   }
-  // remove //
-  replace_all(path, "//", "/");
+  return path;
+}
 
-  return base + path;
+std::string to_absolute_url(std::string_view url, const std::string& relative_to) {
+  if (!is_relative_url(url))
+    return std::string(url);
+
+  const auto base_path_begin = get_scheme_hostname_port(relative_to).size();
+  const auto base = relative_to.substr(0, base_path_begin);
+  if (starts_with(url, "/")) {
+    // try to complete scheme
+    if (starts_with(url, "//")) {
+      const auto with_scheme = std::string(get_scheme(relative_to)) + ":" + std::string(url);
+      if (get_hostname(with_scheme).find('.') != std::string_view::npos)
+        return with_scheme;
+    }
+    return base + std::string(url);
+  }
+  const auto base_path_end = get_scheme_hostname_port_path(relative_to).size();
+  auto path = relative_to.substr(base_path_begin, base_path_end - base_path_begin);
+
+  // remove filename
+  if (auto last_slash = path.rfind('/'); last_slash != std::string::npos)
+    path.resize(last_slash + 1);
+  else
+    path += '/';
+
+  path += std::string(url);
+
+  return base + normalize_path(std::move(path));
 }
 
 std::string_view to_relative_url(LStringView url, std::string_view base_url) {

@@ -60,8 +60,6 @@ void tests() {
 
   eq(to_absolute_url("http://www.a.com/file?query", "http://www.b.com"), "http://www.a.com/file?query");
   eq(to_absolute_url("http://www.b.com/file?query", "http://www.b.com"), "http://www.b.com/file?query");
-  eq(to_absolute_url("//www.a.com/file?query", "http://www.b.com"), "http://www.a.com/file?query");
-  eq(to_absolute_url("//www.a.com/file?query", "https://www.b.com"), "https://www.a.com/file?query");
   eq(to_absolute_url("/http://www.a.com/file?query", "http://www.b.com"), "http://www.b.com/http://www.a.com/file?query");
   eq(to_absolute_url("/http://www.a.com/file?query", "http://www.b.com/"), "http://www.b.com/http://www.a.com/file?query");
   eq(to_absolute_url("/", "http://www.b.com"), "http://www.b.com/");
@@ -108,7 +106,10 @@ void tests() {
   eq(to_absolute_url("../file.txt", "http://www.b.com/sub/sub/index"), "http://www.b.com/sub/file.txt");
   eq(to_absolute_url("data:123", "http://www.b.com/sub/sub/index"), "data:123");
   eq(to_absolute_url("javascript:alert(123)", "http://www.b.com/sub/sub/index"), "javascript:alert(123)");
-  eq(to_absolute_url("sub//file.txt", "http://www.b.com"), "http://www.b.com/sub/file.txt");
+  eq(to_absolute_url("//www.a.com/file?query", "http://www.b.com"), "http://www.a.com/file?query");
+  eq(to_absolute_url("//www.a.com/file?query", "https://www.b.com"), "https://www.a.com/file?query");
+  eq(to_absolute_url("//sub/file.txt", "http://www.b.com"), "http://www.b.com//sub/file.txt");
+  eq(to_absolute_url("sub//file.txt", "http://www.b.com"), "http://www.b.com/sub//file.txt");
 
   eq(get_hostname_port("http://www.a.com"), "www.a.com");
   eq(get_hostname_port("http://www.a.com/"), "www.a.com");
