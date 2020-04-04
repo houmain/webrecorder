@@ -40,11 +40,11 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
         case 'N':
           settings.follow_link_policy = FollowLinkPolicy::none;
           break;
-        case 'H':
-          settings.follow_link_policy = FollowLinkPolicy::same_hostname;
-          break;
         case 'D':
-          settings.follow_link_policy = FollowLinkPolicy::same_second_level_domain;
+          settings.follow_link_policy = FollowLinkPolicy::same_domain;
+          break;
+        case 'S':
+          settings.follow_link_policy = FollowLinkPolicy::same_domain_or_subdomain;
           break;
         case 'P': 
           settings.follow_link_policy = FollowLinkPolicy::same_path;
@@ -151,8 +151,8 @@ void print_help_message(const char* argv0) {
     "  -o <FILE>   set read/write filename.\n"
     "  -f <POLICY> follow link policy:\n"
     "                N  none (default)\n"
-    "                H  same hostname\n"
-    "                D  same second-level domain\n"
+    "                D  same domain\n"
+    "                S  same domain or subdomain\n"
     "                P  same path\n"
     "                A  all\n"
     "  -v <POLICY> validation policy:\n"

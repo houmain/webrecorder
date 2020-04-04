@@ -59,9 +59,9 @@ namespace {
     switch (follow_link_policy) {
       case FollowLinkPolicy::none:
         return "^$";
-      case FollowLinkPolicy::same_hostname:
+      case FollowLinkPolicy::same_domain:
         return url_to_regex(get_scheme_hostname_port(url));
-      case FollowLinkPolicy::same_second_level_domain:
+      case FollowLinkPolicy::same_domain_or_subdomain:
         return url_to_regex(get_scheme_hostname_port(url), true);
       case FollowLinkPolicy::same_path:
         return url_to_regex(get_scheme_hostname_port_path_base(url));

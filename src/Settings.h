@@ -5,8 +5,8 @@
 
 enum class FollowLinkPolicy {
   none,
-  same_hostname,
-  same_second_level_domain,
+  same_domain,
+  same_domain_or_subdomain,
   same_path,
   all,
 };
