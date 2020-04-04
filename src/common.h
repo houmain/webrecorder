@@ -39,7 +39,7 @@ std::string get_hash(ByteView in);
 std::string get_legal_filename(const std::string& filename);
 std::string to_local_filename(std::string url, size_t max_length = 255);
 std::string filename_from_url(const std::string& url);
-std::string url_from_input(const std::string& url_string);
+std::string url_from_input(std::string_view url_string);
 
 bool is_relative_url(std::string_view url);
 bool is_same_url(std::string_view a, std::string_view b);

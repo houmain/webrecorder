@@ -201,10 +201,10 @@ std::string filename_from_url(const std::string& url) {
   return get_legal_filename(filename);
 }
 
-std::string url_from_input(const std::string& url_string) {
+std::string url_from_input(std::string_view url_string) {
   if (url_string.find("://") != std::string::npos)
-    return url_string;
-  return "http://" + url_string;
+    return std::string(trim(url_string));
+  return "http://" + std::string(trim(url_string));
 }
 
 StringViewPair split_content_type(std::string_view content_type) {
