@@ -20,7 +20,7 @@ namespace {
 
   bool is_likely_compressible(std::string_view filename) {
     const auto extension = get_file_extension(filename);
-    return (!iequals_any(extension, 
+    return (!iequals_any(extension,
       "jpg", "jpeg", "png", "gif", "webp", "otf", "woff", "woff2"));
   }
 
@@ -63,6 +63,30 @@ namespace {
       std::filesystem::remove(source, error);
     }
     return true;
+  }
+
+  tm_zip to_tm_zip(time_t time) {
+    const auto local_time = std::localtime(&time);
+    return tm_zip{
+      static_cast<uInt>(local_time->tm_sec),
+      static_cast<uInt>(local_time->tm_min),
+      static_cast<uInt>(local_time->tm_hour),
+      static_cast<uInt>(local_time->tm_mday),
+      static_cast<uInt>(local_time->tm_mon),
+      static_cast<uInt>(local_time->tm_year) + 1900
+    };
+  }
+
+  time_t to_time_t(tm_unz tmu_date) {
+    auto time = std::tm{ };
+    time.tm_sec = static_cast<int>(tmu_date.tm_sec);
+    time.tm_min = static_cast<int>(tmu_date.tm_min);
+    time.tm_hour = static_cast<int>(tmu_date.tm_hour);
+    time.tm_mday = static_cast<int>(tmu_date.tm_mday);
+    time.tm_mon = static_cast<int>(tmu_date.tm_mon);
+    time.tm_year = static_cast<int>(tmu_date.tm_year) - 1900;
+    time.tm_isdst = -1;
+    return std::mktime(&time);
   }
 } // namespace
 
@@ -124,15 +148,7 @@ time_t ArchiveReader::get_modification_time(const std::string& filename) const {
   ::unzGetCurrentFileInfo(unzip, &info,
     nullptr, 0, nullptr, 0, nullptr, 0);
 
-  auto time = std::tm{ };
-  time.tm_sec = static_cast<int>(info.tmu_date.tm_sec);
-  time.tm_min = static_cast<int>(info.tmu_date.tm_min);
-  time.tm_hour = static_cast<int>(info.tmu_date.tm_hour);
-  time.tm_mday = static_cast<int>(info.tmu_date.tm_mday);
-  time.tm_mon = static_cast<int>(info.tmu_date.tm_mon);
-  time.tm_year = static_cast<int>(info.tmu_date.tm_year) - 1900;
-  time.tm_isdst = -1;
-  return std::mktime(&time);
+  return to_time_t(info.tmu_date);
 }
 
 ByteVector ArchiveReader::read(const std::string& filename) const {
@@ -223,7 +239,7 @@ bool ArchiveWriter::contains(const std::string& filename) const {
   return (m_filenames.count(filename) > 0);
 }
 
-bool ArchiveWriter::write(const std::string& filename, ByteView data, 
+bool ArchiveWriter::write(const std::string& filename, ByteView data,
     time_t modification_time, bool allow_lossy_compression) {
   if (!update_filenames(filename))
     return false;
@@ -247,9 +263,8 @@ void ArchiveWriter::async_write(const std::string& filename, ByteView data,
 void ArchiveWriter::async_read(const std::string& filename,
     std::function<void(ByteVector, time_t)>&& on_complete) {
   insert_task([this, filename, on_complete = std::move(on_complete)]() {
-    // TODO:
-    const auto time = time_t{ };
-    on_complete(do_read(filename), time);
+    auto [data, time] = do_read(filename);
+    on_complete(std::move(data), time);
   });
 }
 
@@ -293,7 +308,7 @@ bool ArchiveWriter::reopen(bool for_reading) {
   return (m_zip != nullptr);
 }
 
-bool ArchiveWriter::do_write(const std::string& filename, ByteView data, 
+bool ArchiveWriter::do_write(const std::string& filename, ByteView data,
     time_t modification_time, bool allow_lossy_compression) {
   auto lock = std::lock_guard(m_zip_mutex);
   if (!reopen(false))
@@ -312,16 +327,8 @@ bool ArchiveWriter::do_write(const std::string& filename, ByteView data,
 
   if (!modification_time)
     modification_time = std::time(nullptr);
-  const auto local_time = std::localtime(&modification_time);
   const auto info = zip_fileinfo{
-    tm_zip{
-      static_cast<uInt>(local_time->tm_sec),
-      static_cast<uInt>(local_time->tm_min),
-      static_cast<uInt>(local_time->tm_hour),
-      static_cast<uInt>(local_time->tm_mday),
-      static_cast<uInt>(local_time->tm_mon),
-      static_cast<uInt>(local_time->tm_year) + 1900
-    },
+    to_tm_zip(modification_time),
     0, 0, 0,
   };
   if (::zipOpenNewFileInZip(m_zip, filename.c_str(),
@@ -329,7 +336,7 @@ bool ArchiveWriter::do_write(const std::string& filename, ByteView data,
       Z_DEFLATED, (lossless_compression ?
         Z_DEFAULT_COMPRESSION : Z_NO_COMPRESSION)) != ZIP_OK)
     return false;
-  
+
   ::zipWriteInFileInZip(m_zip, data.data(),
     static_cast<unsigned int>(data.size()));
   ::zipCloseFileInZip(m_zip);
@@ -337,7 +344,7 @@ bool ArchiveWriter::do_write(const std::string& filename, ByteView data,
 }
 
 
-ByteVector ArchiveWriter::do_read(const std::string& filename) {
+std::pair<ByteVector, time_t> ArchiveWriter::do_read(const std::string& filename) {
   auto lock = std::lock_guard(m_zip_mutex);
   if (!reopen(true))
     return { };
@@ -353,7 +360,8 @@ ByteVector ArchiveWriter::do_read(const std::string& filename) {
   ::unzReadCurrentFile(m_zip, buffer.data(),
     static_cast<unsigned int>(info.uncompressed_size));
   ::unzCloseCurrentFile(m_zip);
-  return buffer;
+
+  return std::make_pair(std::move(buffer), to_time_t(info.tmu_date));
 }
 
 void ArchiveWriter::insert_task(std::function<void()>&& task) {
@@ -382,7 +390,7 @@ void ArchiveWriter::finish_thread() {
 void ArchiveWriter::thread_func() {
   for (;;) {
     auto lock = std::unique_lock(m_tasks_mutex);
-    m_tasks_signal.wait(lock, 
+    m_tasks_signal.wait(lock,
       [&]() { return m_finish_thread || !m_tasks.empty(); });
     if (m_tasks.empty())
       break;
