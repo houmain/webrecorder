@@ -209,7 +209,9 @@ return R"(
             delete map[key]
           }
         }
-        for (const c of __webrecorder_cookies.split(';')) { set(c) }
+        for (const c of __webrecorder_cookies.split(';')) {
+					set(c)
+				}
         for (const c of decodeURIComponent(cookie).split(';')) {
           set(c)
           break
@@ -255,11 +257,6 @@ return R"(
     }
   }
 
-  patchXHR()
-  patchSetCookie()
-  patchDateNow()
-  patchMathRandom()
-
   // patch settings of url attributes
   patchElementSetAttribute()
   for (const element of urlElements) {
@@ -275,5 +272,14 @@ return R"(
 
   // use observer to patch innerHTML, document.write, iframe... afterwards
   observeDocument(document, true)
+
+  patchXHR()
+  patchSetCookie()
+
+  if (__webrecorder_deterministic) {
+    patchDateNow()
+    patchMathRandom()
+  }
+
 })(document)
 )";

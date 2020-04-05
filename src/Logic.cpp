@@ -461,7 +461,7 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
       convert_charset(data, (charset.empty() ? "utf-8" : charset), "utf-8"),
       m_follow_link_regex, m_bypassed_hosts.get(),
       m_cookie_store.get_cookies_list(url),
-      response_time);
+      m_settings.deterministic_js, response_time);
 
     patched_data.emplace(
     convert_charset(patcher.get_patched(), "utf-8", (charset.empty() ? "utf-8" : charset)));

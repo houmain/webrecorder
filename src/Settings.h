@@ -30,6 +30,7 @@ struct Settings {
   bool open_browser{ true };
   bool filename_from_title{ false };
   bool allow_lossy_compression{ false };
+  bool deterministic_js{ false };
   FollowLinkPolicy follow_link_policy{ FollowLinkPolicy::never };
   RefreshPolicy refresh_policy{ RefreshPolicy::never };
 };

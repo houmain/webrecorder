@@ -46,6 +46,7 @@ HtmlPatcher::HtmlPatcher(
       std::string follow_link_pattern,
       const HostList* bypassed_hosts,
       std::string cookies,
+      bool deterministic_js,
       time_t start_time)
     : m_server_base(std::move(server_base)),
       m_mime_type(mime_type),
@@ -54,6 +55,7 @@ HtmlPatcher::HtmlPatcher(
       m_follow_link_regex(follow_link_pattern),
       m_bypassed_hosts(bypassed_hosts),
       m_cookies(std::move(cookies)),
+      m_deterministic_js(deterministic_js),
       m_start_time(start_time) {
 
   update_base_url(base_url);
@@ -270,6 +272,7 @@ void HtmlPatcher::inject_patch_script(std::string_view at) {
       "__webrecorder_hostname='" + std::string(get_hostname(m_base_url)) + "';"
       "__webrecorder_follow_link=/" + m_follow_link_pattern + "/i;"
       "__webrecorder_cookies='" + escape_quote(m_cookies) + "';"
+      "__webrecorder_deterministic=" + (m_deterministic_js ? "true" : "false") + ";"
       "__webrecorder_start_time=" + std::to_string(m_start_time) + ";"
     "</script>"
     "<script type='text/javascript' src='" +

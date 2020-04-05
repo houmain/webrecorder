@@ -79,6 +79,7 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
     else if (argument == "--no-open-browser") { settings.open_browser = false; }
     else if (argument == "--filename-from-title") { settings.filename_from_title = true; }
     else if (argument == "--allow-lossy-compression") { settings.allow_lossy_compression = true; }
+    else if (argument == "--deterministic-js") { settings.deterministic_js = true; }
     else if (argument == "-h" || argument == "--help") {
       return false;
     }
@@ -144,9 +145,10 @@ void print_help_message(const char* argv0) {
     "                               always\n"
     "  --no-append                do not keep not requested files.\n"
     "  --no-download              do not download missing files.\n"
-    "  --no-open-browser          do not open browser window\n"
-    "  --filename-from-title      generate output filename from title\n"
-    "  --allow-lossy-compression  allow lossy compression of big images\n"
+    "  --no-open-browser          do not open browser window.\n"
+    "  --filename-from-title      generate output filename from title.\n"
+    "  --allow-lossy-compression  allow lossy compression of big images.\n"
+    "  --deterministic-js         make JavaScript more deterministic.\n"
     "  --block-hosts-file <file>  block hosts in file.\n"
     "  --bypass-hosts-file <file> bypass hosts in file.\n"
     "  --proxy <host[:port]>      set a HTTP proxy.\n"

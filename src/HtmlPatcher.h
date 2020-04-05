@@ -16,7 +16,7 @@ public:
   HtmlPatcher(std::string server_base, std::string base_url, 
     std::string mime_type, std::string data, 
     std::string follow_link_pattern, const HostList* bypassed_hosts,
-    std::string cookies, time_t start_time);
+    std::string cookies, bool deterministic_js, time_t start_time);
 
   const std::string& mime_type() const { return m_mime_type; }
   const std::string& title() const { return m_title; }
@@ -48,6 +48,7 @@ private:
   const std::regex m_follow_link_regex;
   const HostList* m_bypassed_hosts;
   const std::string m_cookies;
+  const bool m_deterministic_js;
   const time_t m_start_time;
   std::string m_base_url;
   std::string m_title;
