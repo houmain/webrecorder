@@ -57,7 +57,7 @@ namespace {
   std::string get_follow_link_regex(FollowLinkPolicy follow_link_policy,
       const std::string& url) {
     switch (follow_link_policy) {
-      case FollowLinkPolicy::none:
+      case FollowLinkPolicy::never:
         return "^$";
       case FollowLinkPolicy::same_domain:
         return url_to_regex(get_scheme_hostname_port(url));
@@ -65,20 +65,20 @@ namespace {
         return url_to_regex(get_scheme_hostname_port(url), true);
       case FollowLinkPolicy::same_path:
         return url_to_regex(get_scheme_hostname_port_path_base(url));
-      case FollowLinkPolicy::all:
+      case FollowLinkPolicy::always:
         return ".*";
     }
     return "";
   }
 
-  bool should_serve_from_archive(ValidationPolicy validation_policy,
+  bool should_serve_from_archive(RefreshPolicy refresh_policy,
       const std::optional<CacheInfo>& cache_info) {
-    if (validation_policy == ValidationPolicy::never)
+    if (refresh_policy == RefreshPolicy::never)
       return true;
-    if (validation_policy == ValidationPolicy::always)
+    if (refresh_policy == RefreshPolicy::always)
       return false;
-    if (validation_policy == ValidationPolicy::when_expired ||
-        validation_policy == ValidationPolicy::when_expired_reload)
+    if (refresh_policy == RefreshPolicy::when_expired ||
+        refresh_policy == RefreshPolicy::when_expired_async)
       return (cache_info && !cache_info->expired);
     return false;
   }
@@ -123,31 +123,37 @@ Logic::Logic(Settings* settings)
   : m_settings(*settings),
     m_client(m_settings.proxy_server) {
 
-  m_settings.filename = std::filesystem::u8path(
-    get_legal_filename(m_settings.filename.u8string()));
+  m_settings.input_file = std::filesystem::u8path(
+    get_legal_filename(m_settings.input_file.u8string()));
+  m_settings.output_file = std::filesystem::u8path(
+    get_legal_filename(m_settings.output_file.u8string()));
 
-  auto archive_reader = std::make_unique<ArchiveReader>();
-  if (archive_reader->open(m_settings.filename))
-    m_settings.filename_from_title = false;
+  if (!m_settings.input_file.empty()) {
+    auto archive_reader = std::make_unique<ArchiveReader>();
+    if (archive_reader->open(m_settings.input_file))
+      m_archive_reader = std::move(archive_reader);
+  }
 
-  if (m_settings.url.empty())
-    if (auto data = archive_reader->read("url"); !data.empty())
-      m_settings.url = std::string(as_string_view(data));
+  if (m_archive_reader) {
+    if (m_settings.url.empty())
+      if (auto data = m_archive_reader->read("url"); !data.empty())
+        m_settings.url = std::string(as_string_view(data));
 
-  if (m_settings.url.empty())
-    throw std::runtime_error("reading file failed");
-
-  if (m_settings.read) {
-    m_archive_reader = std::move(archive_reader);
     if (auto data = m_archive_reader->read("uid"); !data.empty())
       m_uid = std::string(as_string_view(data));
+
     if (auto data = m_archive_reader->read("headers"); !data.empty())
       m_header_reader.deserialize(as_string_view(data));
+
     if (auto data = m_archive_reader->read("cookies"); !data.empty())
       m_cookie_store.deserialize(as_string_view(data));
   }
 
-  if (m_settings.write) {
+  if (m_settings.url.empty())
+    throw std::runtime_error(m_settings.input_file.empty() ?
+      "no URL specified" : "reading file failed");
+
+  if (!m_settings.output_file.empty()) {
     m_archive_writer = std::make_unique<ArchiveWriter>();
     for (auto i = 0; ; ++i) {
       if (m_archive_writer->open(generate_temporary_filename()))
@@ -155,7 +161,7 @@ Logic::Logic(Settings* settings)
       if (i > 5)
         throw std::runtime_error("opening temporary file failed");
     }
-    m_archive_writer->move_on_close(m_settings.filename, true);
+    m_archive_writer->move_on_close(m_settings.output_file, true);
     m_archive_writer->write("url", as_byte_view(m_settings.url));
 
     if (m_settings.allow_lossy_compression)
@@ -240,15 +246,15 @@ void Logic::handle_request(Server::Request request) {
     return;
 
   auto cache_info = std::optional<CacheInfo>{ };
-  if (m_settings.validation_policy != ValidationPolicy::never)
+  if (m_settings.refresh_policy != RefreshPolicy::never)
     cache_info = get_cache_info(request, url);
 
   if (!m_settings.download || 
-      should_serve_from_archive(m_settings.validation_policy, cache_info)) {
+      should_serve_from_archive(m_settings.refresh_policy, cache_info)) {
     if (serve_from_archive(request, url, true))
       return;
   }
-  else if (m_settings.validation_policy == ValidationPolicy::when_expired_reload) {
+  else if (m_settings.refresh_policy == RefreshPolicy::when_expired_async) {
     // serve previous version now request a refresh
     serve_from_archive(request, url, false);
   }
@@ -520,12 +526,13 @@ void Logic::async_write_file(const std::string& identifying_url,
 
 void Logic::set_filename_from_title(const std::string& title_) {
   auto lock = std::lock_guard(m_write_mutex);
-  if (!std::exchange(m_filename_from_title_set, true)) {
-    const auto title = std::string(trim(title_));
-    auto filename = m_settings.filename;
-    filename.replace_filename(std::filesystem::u8path(get_legal_filename(title)));
-    m_archive_writer->move_on_close(filename, false);
-  }
+  if (!std::exchange(m_filename_from_title_set, true))
+    if (m_archive_writer) {
+      const auto title = std::string(trim(title_));
+      auto filename = m_settings.output_file;
+      filename.replace_filename(std::filesystem::u8path(get_legal_filename(title)));
+      m_archive_writer->move_on_close(filename, false);
+    }
 }
 
 void Logic::set_strict_transport_security(const std::string& url, bool sub_domains) {

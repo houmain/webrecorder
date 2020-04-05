@@ -258,6 +258,10 @@ void HtmlPatcher::patch_link(std::string_view at, bool is_anchor) {
 }
 
 void HtmlPatcher::inject_patch_script(std::string_view at) {
+  const auto escape_quote = [](auto string) {
+    replace_all(string, "'", "\\'");
+    return string;
+  };
   auto patch_script =
     "<script type='text/javascript'>"
       "__webrecorder_server_base='" + m_server_base + "';"
@@ -265,12 +269,11 @@ void HtmlPatcher::inject_patch_script(std::string_view at) {
       "__webrecorder_host='" + std::string(get_hostname_port(m_base_url)) + "';"
       "__webrecorder_hostname='" + std::string(get_hostname(m_base_url)) + "';"
       "__webrecorder_follow_link=/" + m_follow_link_pattern + "/i;"
-      "__webrecorder_cookies='" + m_cookies + "';"
+      "__webrecorder_cookies='" + escape_quote(m_cookies) + "';"
       "__webrecorder_start_time=" + std::to_string(m_start_time) + ";"
     "</script>"
     "<script type='text/javascript' src='" +
       std::string(get_patch_script_path()) + "'></script>";
-  replace_all(patch_script, "'", "\"");
   patch(at, std::move(patch_script));
 }
 

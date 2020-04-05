@@ -4,37 +4,34 @@
 #include <vector>
 
 enum class FollowLinkPolicy {
-  none,
+  never,
   same_domain,
   same_domain_or_subdomain,
   same_path,
-  all,
+  always,
 };
 
-enum class ValidationPolicy {
+enum class RefreshPolicy {
   never,
   when_expired,
-  when_expired_reload,
+  when_expired_async,
   always
 };
 
 struct Settings {
   std::string url;
-  std::filesystem::path filename;
-  std::vector<std::filesystem::path> blocked_hosts_lists;
-  std::vector<std::filesystem::path> bypassed_hosts_lists;
+  std::filesystem::path input_file;
+  std::filesystem::path output_file;
+  std::vector<std::filesystem::path> block_hosts_files;
+  std::vector<std::filesystem::path> bypass_hosts_files;
   std::string proxy_server;
-  bool write{ true };
-  bool read{ true };
   bool append{ true };
   bool download{ true };
   bool open_browser{ true };
   bool filename_from_title{ false };
   bool allow_lossy_compression{ false };
-  bool frontend_mode{ false };
-  bool verbose{ false };
-  FollowLinkPolicy follow_link_policy{ FollowLinkPolicy::none };
-  ValidationPolicy validation_policy{ ValidationPolicy::never };
+  FollowLinkPolicy follow_link_policy{ FollowLinkPolicy::never };
+  RefreshPolicy refresh_policy{ RefreshPolicy::never };
 };
 
 bool interpret_commandline(Settings& settings, int argc, const char* argv[]);

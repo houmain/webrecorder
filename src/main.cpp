@@ -24,13 +24,13 @@ int run(int argc, const char* argv[]) noexcept try {
   auto logic = Logic(&settings);
 
   auto blocked_hosts = std::make_unique<HostList>();
-  for (const auto& file : settings.blocked_hosts_lists)
+  for (const auto& file : settings.block_hosts_files)
     blocked_hosts->add_hosts_from_file(file);
   if (blocked_hosts->has_hosts())
     logic.set_blocked_hosts(std::move(blocked_hosts));
 
   auto bypassed_hosts = std::make_unique<HostList>();
-  for (const auto& file : settings.bypassed_hosts_lists)
+  for (const auto& file : settings.bypass_hosts_files)
     bypassed_hosts->add_hosts_from_file(file);
   if (bypassed_hosts->has_hosts())
     logic.set_bypassed_hosts(std::move(bypassed_hosts));
