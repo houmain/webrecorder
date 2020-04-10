@@ -55,6 +55,21 @@ return R"(
     return url
   }
 
+  function unpatchUrl (url) {
+    if (typeof (url) !== 'string') {
+      return url
+    }
+    // try to convert back to relative
+    if (url.startsWith(__webrecorder_server_base)) {
+      url = url.substring(__webrecorder_server_base.length)
+    }
+    var isPatched = /^\/https?:/i
+    if (isPatched.test(url)) {
+      url = url.substring(1)
+    }
+    return url
+  }
+
   function patchStyleUrl (url) {
     const match = url.match(/url\('([^']+)'\)/) || url.match(/url\(([^\)]+)\)/)
     if (match) {
@@ -78,7 +93,23 @@ return R"(
     const open = XMLHttpRequest.prototype.open
     XMLHttpRequest.prototype.open = function () {
       arguments[1] = patchUrl(arguments[1])
-      open.apply(this, arguments)
+      return open.apply(this, arguments)
+    }
+  }
+
+  function patchPostMessage () {
+    const postMessage = window.postMessage
+    window.postMessage = function () {
+      arguments[1] = '*'
+      return postMessage.apply(this, arguments)
+    }
+  }
+
+  function patchFetch () {
+    const fetch = window.fetch
+    window.fetch = function () {
+      arguments[0] = patchUrl(arguments[0])
+      return fetch.apply(this, arguments)
     }
   }
 
@@ -112,6 +143,20 @@ return R"(
         }
       }
       setAttribute.apply(this, arguments)
+    }
+  }
+
+  const getAttribute = Element.prototype.getAttribute
+
+  function patchElementGetAttribute () {
+    Element.prototype.getAttribute = function () {
+      let result = getAttribute.apply(this, arguments)
+      for (const attribute of urlAttributes) {
+        if (arguments[0] === attribute) {
+          return unpatchUrl(result)
+        }
+      }
+      return result
     }
   }
 
@@ -210,8 +255,8 @@ return R"(
           }
         }
         for (const c of __webrecorder_cookies.split(';')) {
-					set(c)
-				}
+          set(c)
+        }
         for (const c of decodeURIComponent(cookie).split(';')) {
           set(c)
           break
@@ -257,8 +302,9 @@ return R"(
     }
   }
 
-  // patch settings of url attributes
+  // patch settings/getting of url attributes
   patchElementSetAttribute()
+  patchElementGetAttribute()
   for (const element of urlElements) {
     var prototype = Object.getPrototypeOf(document.createElement(element))
     for (const attribute of urlAttributes) {
@@ -274,6 +320,8 @@ return R"(
   observeDocument(document, true)
 
   patchXHR()
+  patchPostMessage()
+  patchFetch()
   patchSetCookie()
 
   if (__webrecorder_deterministic) {

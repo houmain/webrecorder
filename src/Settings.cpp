@@ -69,6 +69,8 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
         settings.follow_link_policy = FollowLinkPolicy::same_domain;
       else if (policy == "same-domain-or-subdomain")
         settings.follow_link_policy = FollowLinkPolicy::same_domain_or_subdomain;
+      else if (policy == "same-path")
+        settings.follow_link_policy = FollowLinkPolicy::same_path;
       else if (policy == "always")
         settings.follow_link_policy = FollowLinkPolicy::always;
       else
