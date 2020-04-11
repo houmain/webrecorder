@@ -13,6 +13,7 @@ enum class Event {
   download_finished,
   download_failed,
   download_blocked,
+  serve,
   writing_failed,
 };
 

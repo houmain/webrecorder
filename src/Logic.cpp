@@ -424,6 +424,8 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
   if (request.response_sent())
     return;
 
+  log(Event::serve, url);
+
   // only evaluate while single threaded
   if (m_start_threads_callback) {
     // update server base on initial redirects

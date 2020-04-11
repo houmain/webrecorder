@@ -15,6 +15,7 @@ void write_output(Event event) {
       case Event::download_finished: return "DOWNLOAD_FINISHED";
       case Event::download_failed: return "DOWNLOAD_FAILED";
       case Event::download_blocked: return "DOWNLOAD_BLOCKED";
+      case Event::serve: return "SERVE";
       case Event::writing_failed: return "WRITING_FAILED";
     }
     return "";
