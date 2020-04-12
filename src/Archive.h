@@ -11,6 +11,12 @@
 
 class LossyCompressor;
 
+struct ArchiveFileInfo {
+  uint64_t compressed_size;
+  uint64_t uncompressed_size;
+  time_t modification_time;
+};
+
 class ArchiveReader final {
 public:
   ArchiveReader() = default;
@@ -20,7 +26,7 @@ public:
 
   bool open(const std::filesystem::path& filename);
   void close();
-  time_t get_modification_time(const std::string& filename) const;
+  std::optional<ArchiveFileInfo> get_file_info(const std::string& filename) const;
   ByteVector read(const std::string& filename) const;
   void for_each_file(const std::function<void(std::string)>& callback) const;
 

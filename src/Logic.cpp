@@ -180,9 +180,9 @@ Logic::~Logic() {
         if (!m_blocked_hosts || !m_blocked_hosts->contains(identifying_url))
           if (auto data = m_archive_reader->read(filename); !data.empty()) {
             m_header_writer.write(identifying_url, entry.status_code, entry.header);
-            const auto modification_time =
-              m_archive_reader->get_modification_time(filename);
-            m_archive_writer->write(filename, data, modification_time);
+            const auto file_info = m_archive_reader->get_file_info(filename);
+            m_archive_writer->write(filename, data,
+              (file_info.has_value() ? file_info->modification_time : 0));
           }
     }
   m_archive_reader.reset();
@@ -354,7 +354,8 @@ bool Logic::serve_from_archive(Server::Request& request,
     return false;
 
   const auto filename = to_local_filename(identifying_url);
-  const auto response_time = m_archive_reader->get_modification_time(filename);
+  const auto info = m_archive_reader->get_file_info(filename);
+  const auto response_time = (info.has_value() ? info->modification_time : 0);
   auto data = m_archive_reader->read(filename);
   serve_file(request, url, entry->status_code, entry->header, data, response_time);
 

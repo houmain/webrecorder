@@ -135,7 +135,7 @@ void ArchiveReader::close() {
   m_unzip_contexts.clear();
 }
 
-time_t ArchiveReader::get_modification_time(const std::string& filename) const {
+std::optional<ArchiveFileInfo> ArchiveReader::get_file_info(const std::string& filename) const {
   auto unzip = acquire_context();
   if (!unzip)
     return { };
@@ -148,7 +148,11 @@ time_t ArchiveReader::get_modification_time(const std::string& filename) const {
   ::unzGetCurrentFileInfo(unzip, &info,
     nullptr, 0, nullptr, 0, nullptr, 0);
 
-  return to_time_t(info.tmu_date);
+  return ArchiveFileInfo{
+    static_cast<size_t>(info.compressed_size),
+    static_cast<size_t>(info.uncompressed_size),
+    to_time_t(info.tmu_date)
+  };
 }
 
 ByteVector ArchiveReader::read(const std::string& filename) const {
