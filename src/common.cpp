@@ -102,7 +102,19 @@ std::string_view as_string_view(ByteView data) {
 bool iequals(std::string_view s1, std::string_view s2) {
   return s1.size() == s2.size() &&
     std::equal(s1.begin(), s1.end(), s2.begin(),
-      [](char a, char b) { return std::tolower(a) == std::tolower(b); });
+      [](char a, char b) { return to_lower(a) == to_lower(b); });
+}
+
+bool is_space(char c) {
+  return std::isspace(static_cast<unsigned char>(c));
+}
+
+bool is_punct(char c) {
+  return std::ispunct(static_cast<unsigned char>(c));
+}
+
+char to_lower(char c) {
+  return std::tolower(static_cast<unsigned char>(c));
 }
 
 bool starts_with(std::string_view str, std::string_view with) {
@@ -117,9 +129,9 @@ bool ends_with(std::string_view str, std::string_view with) {
 }
 
 std::string_view trim(LStringView str) {
-  while (!str.empty() && std::isspace(str.front()))
+  while (!str.empty() && is_space(str.front()))
     str = str.substr(1);
-  while (!str.empty() && std::isspace(str.back()))
+  while (!str.empty() && is_space(str.back()))
     str = str.substr(0, str.size() - 1);
   return str;
 }

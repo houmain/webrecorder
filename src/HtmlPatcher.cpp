@@ -171,15 +171,15 @@ void HtmlPatcher::add_source_set(std::string_view at) {
   auto it = links.begin();
   while (it < end) {
     auto begin = it;
-    it = std::find_if(it, end, [](auto c) { return std::isspace(c); });
+    it = std::find_if(it, end, [](auto c) { return is_space(c); });
     patch_link({ &*begin, static_cast<size_t>(it - begin) });
     // skip size
-    while (it != end && std::isspace(*it))
+    while (it != end && is_space(*it))
       ++it;
     it = std::find_if(it, end, [](auto c) { return (c == ','); });
     if (it != end)
       ++it;
-    while (it != end && std::isspace(*it))
+    while (it != end && is_space(*it))
       ++it;
   }
 }

@@ -17,6 +17,9 @@ struct LStringView : std::string_view {
 
 std::string format_time(time_t time);
 time_t parse_time(const std::string& string);
+bool is_space(char c);
+bool is_punct(char c);
+char to_lower(char c);
 bool starts_with(std::string_view str, std::string_view with);
 bool ends_with(std::string_view str, std::string_view with);
 std::string_view trim(LStringView str);

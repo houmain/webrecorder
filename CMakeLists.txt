@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.6)
 project(webrecorder)
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR} ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
 set(GIT_COMMIT_LAST_TAG "unknown")
 find_package(Git)
