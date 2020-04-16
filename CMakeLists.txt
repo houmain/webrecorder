@@ -40,26 +40,36 @@ file(GLOB_RECURSE HEADERS include *.h *.hpp *.inc)
 link_libraries(gumbo z)
 add_compile_definitions(NOCRYPT UNICODE ASIO_STANDALONE USE_STANDALONE_ASIO)
 
-find_package(FreeImage)
-if(FreeImage_FOUND)
-		include_directories(${FreeImage_INCLUDE_DIRS})
-    link_libraries(${FreeImage_LIBRARIES})
-    add_compile_definitions(FreeImage_FOUND)
-endif()
-
 if(NOT MSVC)
     add_compile_options(-Wall -Wextra -Wsign-conversion)
 
     find_package(Threads REQUIRED)
     link_libraries(${CMAKE_THREAD_LIBS_INIT})
     link_libraries(stdc++fs)
+
+    find_package(FreeImage)
+    if(FreeImage_FOUND)
+        include_directories(${FreeImage_INCLUDE_DIRS})
+        link_libraries(${FreeImage_LIBRARIES})
+        add_compile_definitions(FreeImage_FOUND)
+    endif()
 else()
     add_compile_options(/GR- /W1 -D_WIN32_WINNT=0x0501)
     set(MSVC_SHARED_RUNTIME OFF)
-
     set(SOURCES ${SOURCES} libs/minizip/iowin32.c)
-    set(INCLUDES libs/gumbo/include libs/zlib/include libs/asio/include)
-    link_directories(libs/gumbo/lib64 libs/zlib/lib64)
+    set(INCLUDES
+        libs/gumbo/include
+        libs/zlib/include
+        libs/asio/include
+        libs/freeimage/include
+    )
+    link_directories(
+        libs/gumbo/win64
+        libs/zlib/win64
+        libs/freeimage/win64
+    )
+    link_libraries(freeimage)
+    add_compile_definitions(FreeImage_FOUND)
 endif()
 
 find_package(OpenSSL REQUIRED)
@@ -75,8 +85,9 @@ if(NOT WIN32)
     install(TARGETS webrecorder DESTINATION "bin")
 else()
     install(TARGETS webrecorder DESTINATION .)
-    install(FILES libs/gumbo/bin64/gumbo.dll DESTINATION .)
-    install(FILES libs/zlib/bin64/zlib.dll DESTINATION .)
+    install(FILES libs/gumbo/win64/gumbo.dll DESTINATION .)
+    install(FILES libs/zlib/win64/zlib.dll DESTINATION .)
+    install(FILES libs/freeimage/win64/freeimage.dll DESTINATION .)
     install(FILES "C:/windows/system32/libcrypto-1_1-x64.dll" DESTINATION .)
     install(FILES "C:/windows/system32/libssl-1_1-x64.dll" DESTINATION .)
 endif()
