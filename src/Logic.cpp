@@ -388,7 +388,8 @@ void Logic::handle_response(Server::Request& request,
   if (response.error())
     return serve_error(request, url, status_code);
 
-  log(Event::download_finished, static_cast<int>(status_code), " ", url);
+  log(Event::download_finished, static_cast<int>(status_code),
+    " ", response.data().size(), " ", url);
   const auto response_time = std::time(nullptr);
 
   serve_file(request, url, status_code,
@@ -424,8 +425,6 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
 
   if (request.response_sent())
     return;
-
-  log(Event::serve, url);
 
   // only evaluate while single threaded
   if (m_start_threads_callback) {
@@ -509,6 +508,8 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
   response_header.emplace("Cache-Control", "no-store");
 
   request.send_response(status_code, response_header, data);
+
+  log(Event::served, url);
 }
 
 void Logic::async_write_file(const std::string& identifying_url,

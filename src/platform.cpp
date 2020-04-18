@@ -10,12 +10,12 @@ void write_output(Event event) {
       case Event::info: return "INFO";
       case Event::accept: return "ACCEPT";
       case Event::redirect: return "REDIRECT";
-      case Event::download_started: return "DOWNLOAD";
+      case Event::download_started: return "DOWNLOADING";
       case Event::download_omitted: return "DOWNLOAD_OMITTED";
       case Event::download_finished: return "DOWNLOAD_FINISHED";
       case Event::download_failed: return "DOWNLOAD_FAILED";
       case Event::download_blocked: return "DOWNLOAD_BLOCKED";
-      case Event::serve: return "SERVE";
+      case Event::served: return "SERVED";
       case Event::writing_failed: return "WRITING_FAILED";
     }
     return "";
