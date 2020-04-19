@@ -1,5 +1,6 @@
 
 #include "platform.h"
+#include <fstream>
 #include <mutex>
 
 void write_output(Event event) {
@@ -20,6 +21,15 @@ void write_output(Event event) {
     }
     return "";
   }());
+}
+
+std::string read_utf8_textfile(const std::filesystem::path& filename) {
+  auto file = std::ifstream(filename);
+  if (!file.good())
+    throw std::runtime_error("reading '" + filename.u8string() + "' failed");
+  auto buffer = std::stringstream();
+  buffer << file.rdbuf();
+  return { buffer.str() };
 }
 
 #if !defined(_WIN32)
@@ -74,11 +84,6 @@ void write_output(const char* utf8) {
 
 void write_output(const std::string& utf8) {
   write_output(utf8.c_str());
-}
-
-void open_browser(const std::string& url) {
-  if (std::system(("xdg-open \"" + url + "\"").c_str()))
-    std::system(("open \"" + url + "\"").c_str());
 }
 
 int main(int argc, const char* argv[]) {
@@ -177,11 +182,6 @@ void write_output(const char* utf8) {
 
 void write_output(const std::string& utf8) {
   write_output_wide(utf8_to_wide(utf8));
-}
-
-void open_browser(const std::string& url) {
-  ShellExecuteW(0, L"open", utf8_to_wide(url).c_str(),
-    NULL, NULL, SW_SHOWNORMAL);
 }
 
 int wmain(int argc, wchar_t* wargv[]) {

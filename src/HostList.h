@@ -6,7 +6,7 @@
 
 class HostList {
 public:
-  bool add_hosts_from_file(const std::filesystem::path& filename);
+  void add_hosts_from_file(const std::filesystem::path& filename);
   bool has_hosts() const { return !m_hash_set.empty(); }
   bool contains(std::string_view url) const;
 

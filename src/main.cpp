@@ -2,7 +2,6 @@
 #include "Server.h"
 #include "Logic.h"
 #include "Settings.h"
-#include "HtmlPatcher.h"
 #include "HostList.h"
 #include "platform.h"
 #include <filesystem>
@@ -23,18 +22,6 @@ int run(int argc, const char* argv[]) noexcept try {
 
   auto logic = Logic(&settings);
 
-  auto blocked_hosts = std::make_unique<HostList>();
-  for (const auto& file : settings.block_hosts_files)
-    blocked_hosts->add_hosts_from_file(file);
-  if (blocked_hosts->has_hosts())
-    logic.set_blocked_hosts(std::move(blocked_hosts));
-
-  auto bypassed_hosts = std::make_unique<HostList>();
-  for (const auto& file : settings.bypass_hosts_files)
-    bypassed_hosts->add_hosts_from_file(file);
-  if (bypassed_hosts->has_hosts())
-    logic.set_bypassed_hosts(std::move(bypassed_hosts));
-
   using namespace std::placeholders;
   auto server = Server(
     std::bind(&Logic::handle_request, &logic, _1),
@@ -46,9 +33,6 @@ int run(int argc, const char* argv[]) noexcept try {
 
   logic.set_local_server_url(local);
   logic.set_start_threads_callback([&]() { server.run_threads(5); });
-
-  if (settings.open_browser)
-    open_browser(local);
 
   server.run();
   return 0;

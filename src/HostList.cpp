@@ -1,16 +1,9 @@
 
 #include "HostList.h"
-#include "common.h"
-#include <fstream>
-#include <sstream>
+#include "platform.h"
 
-bool HostList::add_hosts_from_file(const std::filesystem::path& filename) {
-  auto file = std::ifstream(filename);
-  if (!file.good())
-    return false;
-  auto buffer = std::stringstream();
-  buffer << file.rdbuf();
-  m_hosts_files.emplace_back(buffer.str());
+void HostList::add_hosts_from_file(const std::filesystem::path& filename) {
+  m_hosts_files.emplace_back(read_utf8_textfile(filename));
   const auto view = std::string_view(m_hosts_files.back());
   for (auto pos = std::string::size_type{ }; ;) {
     const auto begin = pos;
@@ -29,7 +22,6 @@ bool HostList::add_hosts_from_file(const std::filesystem::path& filename) {
     if (!line.empty() && line.find(' ') == std::string_view::npos)
       m_hash_set.emplace(line);
   }
-  return true;
 }
 
 bool HostList::contains(std::string_view url) const {

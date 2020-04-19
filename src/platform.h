@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common.h"
+#include <filesystem>
 
 enum class Event {
   fatal,
@@ -17,6 +18,7 @@ enum class Event {
   writing_failed,
 };
 
+std::string read_utf8_textfile(const std::filesystem::path& filename);
 std::string get_message_utf8(std::error_code error);
 std::string get_message_utf8(const std::exception& ex);
 
@@ -33,7 +35,5 @@ void log(Event event, Args&&... args) {
   write_output(" ");
   (write_output(args), ...);
 }
-
-void open_browser(const std::string& url);
 
 extern int run(int argc, const char* argv[]) noexcept;

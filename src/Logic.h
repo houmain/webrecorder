@@ -28,8 +28,6 @@ public:
   // only call on main thread
   void set_local_server_url(std::string local_server_url);
   void set_start_threads_callback(std::function<void()> callback);
-  void set_blocked_hosts(std::unique_ptr<HostList> blocked_hosts);
-  void set_bypassed_hosts(std::unique_ptr<HostList> bypassed_hosts);
 
   // threadsafe
   void handle_request(Server::Request request);
@@ -55,18 +53,16 @@ private:
     StatusCode status_code, const Header& header, ByteView data,
     time_t response_time, bool allow_lossy_compression,
     std::function<void(bool)>&& on_complete);
-  void set_filename_from_title(const std::string& title);
   void set_strict_transport_security(const std::string& url, bool include_subdomains);
   std::string apply_strict_transport_security(std::string url) const;
 
   // only updated while single threaded
   Settings& m_settings;
   std::string m_uid;
-  std::string m_follow_link_regex;
   std::unique_ptr<ArchiveReader> m_archive_reader;
   std::unique_ptr<HostList> m_blocked_hosts;
-  std::unique_ptr<HostList> m_bypassed_hosts;
   HeaderStore m_header_reader;
+  std::string m_inject_javascript_code;
   std::string m_local_server_base;
   std::string m_server_base;
   std::string m_server_base_path;
@@ -81,5 +77,4 @@ private:
   std::unique_ptr<ArchiveWriter> m_archive_writer;
   HeaderStore m_header_writer;
   std::map<std::string, std::regex, std::less<void>> m_strict_transport_security;
-  bool m_filename_from_title_set{ };
 };

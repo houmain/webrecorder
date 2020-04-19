@@ -10,6 +10,8 @@
 
 namespace {
   const auto basic_js_header = Header{ { "Content-Type", "text/javascript" } };
+  const auto set_cookie_request = "/__webrecorder_setcookie";
+  const auto inject_javascript_request = "/__webrecorder.js";
 
   std::string generate_id(int length = 8) {
     auto rand = std::random_device();
@@ -53,23 +55,6 @@ namespace {
     replace_all(regex, "/", "\\/");
     return "^" + regex + ".*";
   };
-
-  std::string get_follow_link_regex(FollowLinkPolicy follow_link_policy,
-      const std::string& url) {
-    switch (follow_link_policy) {
-      case FollowLinkPolicy::never:
-        return "^$";
-      case FollowLinkPolicy::same_domain:
-        return url_to_regex(get_scheme_hostname_port(url));
-      case FollowLinkPolicy::same_domain_or_subdomain:
-        return url_to_regex(get_scheme_hostname_port(url), true);
-      case FollowLinkPolicy::same_path:
-        return url_to_regex(get_scheme_hostname_port_path_base(url));
-      case FollowLinkPolicy::always:
-        return ".*";
-    }
-    return "";
-  }
 
   bool should_serve_from_archive(RefreshPolicy refresh_policy,
       const std::optional<CacheInfo>& cache_info) {
@@ -169,6 +154,19 @@ Logic::Logic(Settings* settings)
         std::make_unique<LossyCompressor>());
   }
 
+  if (m_settings.url.empty())
+    throw std::runtime_error(m_settings.input_file.empty() ?
+      "no URL specified" : "reading file failed");
+
+  auto blocked_hosts = std::make_unique<HostList>();
+  for (const auto& file : m_settings.block_hosts_files)
+    blocked_hosts->add_hosts_from_file(file);
+  if (blocked_hosts->has_hosts())
+    m_blocked_hosts = std::move(blocked_hosts);
+
+  if (!m_settings.inject_javascript_file.empty())
+    m_inject_javascript_code = read_utf8_textfile(m_settings.inject_javascript_file);
+
   set_server_base(m_settings.url);
 }
 
@@ -207,26 +205,12 @@ void Logic::set_start_threads_callback(std::function<void()> callback) {
   m_start_threads_callback = std::move(callback);
 }
 
-void Logic::set_blocked_hosts(std::unique_ptr<HostList> blocked_hosts) {
-  m_blocked_hosts = std::move(blocked_hosts);
-}
-
-void Logic::set_bypassed_hosts(std::unique_ptr<HostList> bypass_hosts) {
-  m_bypassed_hosts = std::move(bypass_hosts);
-}
-
 void Logic::set_server_base(const std::string& url) {
   m_server_base = get_scheme_hostname_port(url);
   m_server_base_path = get_scheme_hostname_port_path(url);
-  m_follow_link_regex = get_follow_link_regex(
-    m_settings.follow_link_policy, url);
 }
 
 void Logic::handle_request(Server::Request request) {
-  if (request.path() == get_patch_script_path())
-    return request.send_response(StatusCode::success_ok,
-      basic_js_header, as_byte_view(get_patch_script()));
-
   auto url = to_absolute_url(unpatch_url(request.path()), m_server_base);
   if (!request.query().empty())
     url += "?" + request.query();
@@ -234,7 +218,11 @@ void Logic::handle_request(Server::Request request) {
   if (get_scheme(url) == "http")
     url = apply_strict_transport_security(std::move(url));
 
-  if (ends_with(request.path(), "__webrecorder_setcookie")) {
+  if (request.path() == inject_javascript_request)
+    return request.send_response(StatusCode::success_ok,
+      basic_js_header, as_byte_view(m_inject_javascript_code));
+
+  if (request.path() == set_cookie_request) {
     m_cookie_store.set(url, as_string_view(request.data()));
     return request.send_response(StatusCode::success_no_content, { }, { });
   }
@@ -355,7 +343,7 @@ bool Logic::serve_from_archive(Server::Request& request,
 
   const auto filename = to_local_filename(identifying_url);
   const auto info = m_archive_reader->get_file_info(filename);
-  const auto response_time = (info.has_value() ? info->modification_time : 0);
+  const auto response_time = (info.has_value() ? info->modification_time : std::time(nullptr));
   auto data = m_archive_reader->read(filename);
   serve_file(request, url, entry->status_code, entry->header, data, response_time);
 
@@ -451,31 +439,26 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
     content_type = it->second;
   const auto [mime_type, charset] = split_content_type(content_type);
 
-  // cookies are stored by webrecorder and accessible using javascript
+  // cookies are stored by webrecorder and accessible using JavaScript
   auto [cookie_begin, cookie_end] = header.equal_range("Set-Cookie");
   for (auto it = cookie_begin; it != cookie_end; ++it)
     m_cookie_store.set(url, it->second);
 
   auto patched_data = std::optional<std::string>();
-  if (!data.empty() && iequals_any(mime_type, "text/html", "text/css")) {
+  if (!data.empty() && iequals_any(mime_type, "text/html")) {
     const auto patcher = HtmlPatcher(
-      m_server_base, url, std::string(mime_type),
+      m_server_base, url,
       convert_charset(data, (charset.empty() ? "utf-8" : charset), "utf-8"),
-      m_follow_link_regex, m_bypassed_hosts.get(),
+      (m_inject_javascript_code.empty() ? "" : inject_javascript_request),
       m_cookie_store.get_cookies_list(url),
-      m_settings.deterministic_js, response_time);
+      response_time);
 
     patched_data.emplace(
-    convert_charset(patcher.get_patched(), "utf-8", (charset.empty() ? "utf-8" : charset)));
+      convert_charset(patcher.get_patched(), "utf-8", (charset.empty() ? "utf-8" : charset)));
     data = as_byte_view(patched_data.value());
 
     if (!content_length.empty())
       content_length = std::to_string(data.size());
-
-    if (m_settings.filename_from_title &&
-        status_code == StatusCode::success_ok &&
-        !patcher.title().empty())
-      set_filename_from_title(patcher.title());
   }
 
   auto response_header = Header();
@@ -526,17 +509,6 @@ void Logic::async_write_file(const std::string& identifying_url,
         std::move(on_complete));
   }
   on_complete(true);
-}
-
-void Logic::set_filename_from_title(const std::string& title_) {
-  auto lock = std::lock_guard(m_write_mutex);
-  if (!std::exchange(m_filename_from_title_set, true))
-    if (m_archive_writer) {
-      const auto title = std::string(trim(title_));
-      auto filename = m_settings.output_file;
-      filename.replace_filename(std::filesystem::u8path(get_legal_filename(title)));
-      m_archive_writer->move_on_close(filename, false);
-    }
 }
 
 void Logic::set_strict_transport_security(const std::string& url, bool sub_domains) {
