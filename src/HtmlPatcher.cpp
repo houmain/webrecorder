@@ -4,6 +4,7 @@
 #include "gumbo.h"
 #include <stack>
 #include <cctype>
+#include <cstring>
 
 HtmlPatcher::HtmlPatcher(
       std::string server_base,
@@ -31,7 +32,8 @@ void HtmlPatcher::parse_html() {
   auto element_stack = std::stack<const GumboNode*>();
   element_stack.push(output->root);
 
-  auto inject_script_at = m_data.data() + m_data.size();
+  auto start_of_head = std::optional<const char*>();
+  auto has_base_tag = false;
 
   const auto range = [&](GumboStringPiece piece) {
     return std::string_view(piece.data, piece.length);
@@ -43,14 +45,17 @@ void HtmlPatcher::parse_html() {
     const auto& element = node->v.element;
 
     switch (element.tag) {
+      case GUMBO_TAG_HEAD: {
+        if (element.original_tag.data)
+          start_of_head = element.original_tag.data + element.original_tag.length;
+        break;
+      }
       case GUMBO_TAG_BASE:
-        inject_script_at = std::min(inject_script_at, element.original_tag.data);
         if (const auto attrib = gumbo_get_attribute(&element.attributes, "href"))
           apply_base(range(attrib->original_value));
+        has_base_tag = true;
         break;
-      case GUMBO_TAG_SCRIPT:
-        inject_script_at = std::min(inject_script_at, element.original_tag.data);
-        break;
+
       default:
         break;
     }
@@ -71,8 +76,21 @@ void HtmlPatcher::parse_html() {
   }
   gumbo_destroy_output(&kGumboDefaultOptions, output);
 
-  if (inject_script_at < m_data.data() + m_data.size())
-    inject_patch_script({ inject_script_at, 0 });
+  if (!start_of_head) {
+    // sometimes the HTML is too foobared for gumbo
+    // e.g.: https://www.retrogames.cz/play_102-DOS.php
+    auto head = std::strstr(m_data.data(), "<head>");
+    if (!head)
+      head = std::strstr(m_data.data(), "<HEAD>");
+    if (head)
+      start_of_head = head + 6;
+  }
+
+  if (start_of_head) {
+    if (!has_base_tag)
+      inject_base({ *start_of_head, 0 });
+    inject_patch_script({ *start_of_head, 0 });
+  }
 }
 
 std::string_view HtmlPatcher::get_link(std::string_view at) const {
@@ -89,10 +107,16 @@ std::string_view HtmlPatcher::get_link(std::string_view at) const {
   return link;
 }
 
+void HtmlPatcher::inject_base(std::string_view at) {
+  auto base_script = "<base href='" +
+    std::string(get_scheme_hostname_port_path_base(m_base_url)) + "'>";
+  patch(at, std::move(base_script));
+}
+
 void HtmlPatcher::apply_base(std::string_view at) {
   const auto link = get_link(at);
   update_base_url(to_absolute_url(link, m_base_url));
-  patch(link, patch_absolute_url(m_base_url));
+  patch(link, m_base_url);
 }
 
 void HtmlPatcher::update_base_url(std::string base_url) {

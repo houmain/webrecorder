@@ -405,15 +405,6 @@ std::string_view get_file_extension(LStringView url) {
   return { };
 }
 
-std::string patch_absolute_url(std::string url, std::string_view base) {
-  // try to convert to relative
-  if (!base.empty() && starts_with(url, base))
-    return url.substr(base.size());
-
-  // patch absolute to relative
-  return "/" + url;
-}
-
 std::string_view unpatch_url(LStringView url) {
   if (is_relative_url(url)) {
     const auto scheme = get_scheme(url.substr(1));

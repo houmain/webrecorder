@@ -57,5 +57,4 @@ std::string_view get_scheme_hostname_port_path_base(LStringView url);
 std::string_view get_without_first_domain(LStringView url);
 std::string_view get_file_extension(LStringView url);
 
-std::string patch_absolute_url(std::string url, std::string_view base = { });
 std::string_view unpatch_url(LStringView url);

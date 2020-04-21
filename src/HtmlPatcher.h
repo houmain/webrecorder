@@ -17,6 +17,7 @@ private:
   void update_base_url(std::string url);
   void parse_html();
   std::string_view get_link(std::string_view at) const;
+  void inject_base(std::string_view at);
   void apply_base(std::string_view at);
   void inject_patch_script(std::string_view at);
   void remove_region(std::string_view at);

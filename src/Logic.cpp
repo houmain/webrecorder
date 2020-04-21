@@ -464,8 +464,9 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
   auto response_header = Header();
   for (const auto& [name, value] : header)
     if (iequals(name, "Location")) {
+      const auto location = to_absolute_url(value, url);
       response_header.emplace(name,
-        patch_absolute_url(to_absolute_url(value, url), m_server_base));
+        to_relative_url(location, m_server_base));
     }
     else if (iequals(name, "Content-Type")) {
       response_header.emplace(name, content_type);

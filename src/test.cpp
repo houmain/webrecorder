@@ -152,8 +152,6 @@ void tests() {
   eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/file?query"), "http://www.a.com:8080/");
   eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/file#fragment"), "http://www.a.com:8080/");
 
-  eq(patch_absolute_url("http://www.a.com/file?query", "http://www.a.com"), "/file?query");
-  eq(patch_absolute_url("http://www.a.com/file?query", "http://www.b.com"), "/http://www.a.com/file?query");
   eq(unpatch_url("/file?query"), "/file?query");
   eq(unpatch_url("/http://www.a.com/file?query"), "http://www.a.com/file?query");
   eq(unpatch_url("http://www.a.com/file?query"), "http://www.a.com/file?query");
