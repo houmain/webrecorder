@@ -41,6 +41,12 @@ struct Server::Impl : public HttpServer {
     default_resource["GET"] =
     default_resource["POST"] =
     default_resource["HEAD"] =
+    default_resource["PUT"] =
+    default_resource["DELETE"] =
+    default_resource["CONNECT"] =
+    default_resource["OPTIONS"] =
+    default_resource["TRACE"] =
+    default_resource["PATCH"] =
       [this](std::shared_ptr<HttpServer::Response> response,
              std::shared_ptr<HttpServer::Request> request) {
         auto request_impl = std::make_unique<::Server::Request::Impl>();
