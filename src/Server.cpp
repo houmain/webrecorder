@@ -35,9 +35,6 @@ struct Server::Impl : public HttpServer {
 
     stop_signals->async_wait(std::bind(&asio::io_service::stop, io_service));
 
-    config.port = 0;
-    port = bind();
-
     default_resource["GET"] =
     default_resource["POST"] =
     default_resource["HEAD"] =
@@ -66,12 +63,12 @@ struct Server::Impl : public HttpServer {
         request_impl->request = std::move(request);
         handle_error({ std::move(request_impl) }, error);
       };
-
-    acceptor->listen();
-    accept();
   }
 
-  void run() {
+  void run(const HandleAccepting& handle_accepting) {
+    config.port = 0;
+    HttpServer::start(handle_accepting);
+
     io_service->run();
   }
 
@@ -169,7 +166,7 @@ void Server::run_threads(int thread_count) {
   m_impl->run_threads(thread_count);
 }
 
-void Server::run() {
-  m_impl->run();
+void Server::run(const HandleAccepting& handle_accepting) {
+  m_impl->run(handle_accepting);
   m_impl->join_threads();
 }

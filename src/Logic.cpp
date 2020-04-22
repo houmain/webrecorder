@@ -9,7 +9,7 @@
 #include <sstream>
 
 namespace {
-  const auto basic_js_header = Header{ { "Content-Type", "text/javascript" } };
+  const auto basic_js_header = Header{ { "Content-Type", "text/javascript;charset=utf-8" } };
   const auto set_cookie_request = "/__webrecorder_setcookie";
   const auto inject_javascript_request = "/__webrecorder.js";
 
@@ -199,6 +199,7 @@ Logic::~Logic() {
 
 void Logic::set_local_server_url(std::string local_server_url) {
   m_local_server_base = get_scheme_hostname_port(local_server_url);
+  log(Event::accept, local_server_url);
 }
 
 void Logic::set_start_threads_callback(std::function<void()> callback) {
@@ -218,11 +219,11 @@ void Logic::handle_request(Server::Request request) {
   if (get_scheme(url) == "http")
     url = apply_strict_transport_security(std::move(url));
 
-  if (request.path() == inject_javascript_request)
+  if (ends_with(request.path(), inject_javascript_request))
     return request.send_response(StatusCode::success_ok,
       basic_js_header, as_byte_view(m_inject_javascript_code));
 
-  if (request.path() == set_cookie_request) {
+  if (ends_with(request.path(), set_cookie_request)) {
     m_cookie_store.set(url, as_string_view(request.data()));
     return request.send_response(StatusCode::success_no_content, { }, { });
   }

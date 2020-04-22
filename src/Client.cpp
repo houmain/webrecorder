@@ -13,6 +13,9 @@ extern std::shared_ptr<asio::io_service> sole_io_service();
 namespace {
   class GrowBuffer {
   public:
+    GrowBuffer() = default;
+    GrowBuffer(const GrowBuffer&) = delete;
+    GrowBuffer& operator=(const GrowBuffer&) = delete;
     ~GrowBuffer() {
       std::free(m_data);
     }
@@ -23,7 +26,7 @@ namespace {
       return m_capacity;
     }
     void grow() {
-      m_capacity += (2 << 15);
+      m_capacity = std::max(std::streamsize{ 4096 }, m_capacity * 2);
       m_data = static_cast<std::byte*>(
         std::realloc(m_data, static_cast<size_t>(m_capacity)));
     }

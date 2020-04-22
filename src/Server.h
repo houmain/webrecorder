@@ -30,6 +30,7 @@ public:
   private:
     std::unique_ptr<Impl> m_impl;
   };
+  using HandleAccepting = std::function<void(unsigned short)>;
   using HandleRequest = std::function<void(Request)>;
   using HandleError = std::function<void(Request, std::error_code)>;
 
@@ -39,7 +40,7 @@ public:
   ~Server();
 
   int port() const;
-  void run();
+  void run(const HandleAccepting& handle_accepting);
   void run_threads(int thread_count);
 
 private:
