@@ -40,6 +40,7 @@ private:
   bool serve_from_cache(Server::Request& request, const std::string& url);
   bool serve_from_archive(Server::Request& request, const std::string& url,
     bool write_to_archive);
+  void send_cors_response(Server::Request request);
   void forward_request(Server::Request request, const std::string& url,
     const std::optional<CacheInfo>& cache_info);
   void handle_response(Server::Request& request,

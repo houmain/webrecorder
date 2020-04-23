@@ -212,6 +212,10 @@ void Logic::set_server_base(const std::string& url) {
 }
 
 void Logic::handle_request(Server::Request request) {
+
+  if (request.method() == "OPTIONS")
+    return send_cors_response(std::move(request));
+
   auto url = to_absolute_url(unpatch_url(request.path()), m_server_base);
   if (!request.query().empty())
     url += "?" + request.query();
@@ -250,6 +254,22 @@ void Logic::handle_request(Server::Request request) {
   forward_request(std::move(request), url, cache_info);
 }
 
+void Logic::send_cors_response(Server::Request request) {
+  auto response_header = Header();
+  response_header.emplace("Access-Control-Max-Age", "-1");
+  for (const auto& [name, value] : request.header())
+    if (iequals(name, "Access-Control-Request-Origin")) {
+      response_header.emplace("Access-Control-Allow-Origin", m_server_base);
+    }
+    else if (iequals(name, "Access-Control-Request-Method")) {
+      response_header.emplace("Access-Control-Allow-Method", value);
+    }
+    else if (iequals(name, "Access-Control-Request-Headers")) {
+      response_header.emplace("Access-Control-Allow-Headers", value);
+    }
+  request.send_response(StatusCode::success_no_content, response_header, { });
+}
+
 void Logic::forward_request(Server::Request request, const std::string& url,
     const std::optional<CacheInfo>& cache_info) {
   if (!m_settings.download)
@@ -259,11 +279,11 @@ void Logic::forward_request(Server::Request request, const std::string& url,
 
   auto header = Header();
   for (const auto& [name, value] : request.header())
-    if (iequals_any(name, "referer", "origin")) {
+    if (iequals_any(name, "Referer", "Origin")) {
       const auto relative_url = unpatch_url(to_relative_url(value, m_local_server_base));
       header.emplace(name, to_absolute_url(relative_url, url));
     }
-    else if (!iequals_any(name, "host", "accept-encoding")) {
+    else if (!iequals_any(name, "Host", "Accept-Encoding")) {
       header.emplace(name, value);
     }
 
@@ -481,7 +501,10 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
     }
     else if (!iequals_any(name,
           "Set-Cookie",
+          "Link",
           "Transfer-Encoding",
+          "Access-Control-Allow-Origin",
+          "Timing-Allow-Origin",
           "Content-Security-Policy",
           "Content-Security-Policy-Report-Only")) {
       response_header.emplace(name, value);
