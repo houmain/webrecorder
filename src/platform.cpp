@@ -1,6 +1,7 @@
 
 #include "platform.h"
 #include <fstream>
+#include <sstream>
 #include <mutex>
 
 void write_output(Event event) {

@@ -3,6 +3,7 @@
 #include "HostList.h"
 #include "gumbo.h"
 #include <stack>
+#include <optional>
 #include <cctype>
 #include <cstring>
 
@@ -109,7 +110,7 @@ std::string_view HtmlPatcher::get_link(std::string_view at) const {
 
 void HtmlPatcher::inject_base(std::string_view at) {
   auto base_script = "<base href='" +
-    std::string(get_scheme_hostname_port_path_base(m_base_url)) + "'>";
+    std::string(get_scheme_hostname_port_path(m_base_url)) + "'>";
   patch(at, std::move(base_script));
 }
 
@@ -133,12 +134,14 @@ void HtmlPatcher::inject_patch_script(std::string_view at) {
   };
   auto patch_script =
     "<script type='text/javascript'>"
-      "__webrecorder_server_base='" + m_server_base + "';"
-      "__webrecorder_origin='" + std::string(get_scheme_hostname_port(m_base_url)) + "';"
-      "__webrecorder_host='" + std::string(get_hostname_port(m_base_url)) + "';"
-      "__webrecorder_hostname='" + std::string(get_hostname(m_base_url)) + "';"
-      "__webrecorder_cookies='" + escape_quote(m_cookies) + "';"
-      "__webrecorder_response_time=" + std::to_string(m_response_time) + ";"
+      "__webrecorder = { "
+        "server_base:'" + m_server_base + "', "
+        "origin:'" + std::string(get_scheme_hostname_port(m_base_url)) + "', "
+        "host:'" + std::string(get_hostname_port(m_base_url)) + "', "
+        "hostname:'" + std::string(get_hostname(m_base_url)) + "', "
+        "cookies:'" + escape_quote(m_cookies) + "', "
+        "response_time:" + std::to_string(m_response_time) + ", "
+      "}"
     "</script>"
     "<script type='text/javascript' src='" + m_inject_js_path + "'></script>";
   patch(at, std::move(patch_script));

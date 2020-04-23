@@ -108,7 +108,6 @@ void print_help_message(const char* argv0) {
   "";
 #endif
 
-
   printf(
     "webrecorder %s(c) 2019-2020 by Albert Kalchmair\n"
     "\n"
