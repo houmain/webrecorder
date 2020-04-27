@@ -9,10 +9,6 @@
 extern "C" int siphash(const uint8_t* in, const size_t inlen,
   const uint8_t* k, uint8_t* out, const size_t outlen);
 
-#if __has_include(<iconv.h>)
-# define USE_ICONV
-#endif
-
 #if defined(USE_ICONV)
 # include <iconv.h>
 

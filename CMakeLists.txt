@@ -29,47 +29,38 @@ set(SOURCES
     src/HostList.cpp
     src/LossyCompressor.cpp
     src/test.cpp
+)
+
+if(NOT MSVC)
+    set_source_files_properties(${SOURCES}
+       PROPERTIES COMPILE_FLAGS  "-Wall -Wextra -Wsign-conversion -Wconversion")
+    find_package(Threads REQUIRED)
+    link_libraries(${CMAKE_THREAD_LIBS_INIT})
+    link_libraries(stdc++fs)
+else()
+    add_compile_options(/GR- /W1)
+    set(MSVC_SHARED_RUNTIME OFF)
+endif()
+
+set(SOURCES ${SOURCES}
     libs/utf8/utf8.cpp
     libs/siphash/siphash.c
     libs/minizip/zip.c
     libs/minizip/unzip.c
     libs/minizip/ioapi.c
-  )
+)
+
 file(GLOB_RECURSE HEADERS include *.h *.hpp *.inc)
 
 link_libraries(gumbo z)
 add_compile_definitions(NOCRYPT UNICODE ASIO_STANDALONE USE_STANDALONE_ASIO)
 
-if(NOT MSVC)
-    add_compile_options(-Wall -Wextra -Wsign-conversion)
+if (WIN32)
+    add_compile_definitions(_WIN32_WINNT=0x0501)
+    link_libraries(ws2_32 wsock32)
 
-    find_package(Threads REQUIRED)
-    link_libraries(${CMAKE_THREAD_LIBS_INIT})
-    link_libraries(stdc++fs)
-
-    find_package(FreeImage)
-    if(FreeImage_FOUND)
-        include_directories(${FreeImage_INCLUDE_DIRS})
-        link_libraries(${FreeImage_LIBRARIES})
-        add_compile_definitions(FreeImage_FOUND)
-    endif()
-else()
-    add_compile_options(/GR- /W1 -D_WIN32_WINNT=0x0501)
-    set(MSVC_SHARED_RUNTIME OFF)
     set(SOURCES ${SOURCES} libs/minizip/iowin32.c)
-    set(INCLUDES
-        libs/gumbo/include
-        libs/zlib/include
-        libs/asio/include
-        libs/freeimage/include
-    )
-    link_directories(
-        libs/gumbo/win64
-        libs/zlib/win64
-        libs/freeimage/win64
-    )
-    link_libraries(freeimage)
-    add_compile_definitions(FreeImage_FOUND)
+    set(INCLUDES libs/asio/include)
 endif()
 
 find_package(OpenSSL REQUIRED)
@@ -77,17 +68,17 @@ add_compile_definitions(HAVE_OPENSSL)
 link_libraries(${OPENSSL_LIBRARIES})
 include_directories(${OPENSSL_INCLUDE_DIR})
 
-include_directories(. ${INCLUDES})
+include_directories(.)
+include_directories(SYSTEM ${INCLUDES})
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})
 add_executable(webrecorder ${SOURCES} ${HEADERS})
+
+if(WIN32 AND NOT MSVC)
+  target_link_options(webrecorder BEFORE PUBLIC -municode)
+endif()
 
 if(NOT WIN32)
     install(TARGETS webrecorder DESTINATION "bin")
 else()
     install(TARGETS webrecorder DESTINATION .)
-    install(FILES libs/gumbo/win64/gumbo.dll DESTINATION .)
-    install(FILES libs/zlib/win64/zlib.dll DESTINATION .)
-    install(FILES libs/freeimage/win64/freeimage.dll DESTINATION .)
-    install(FILES "C:/windows/system32/libcrypto-1_1-x64.dll" DESTINATION .)
-    install(FILES "C:/windows/system32/libssl-1_1-x64.dll" DESTINATION .)
 endif()
