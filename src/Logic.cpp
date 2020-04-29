@@ -29,7 +29,7 @@ namespace {
     auto rand = std::random_device();
     auto filename = std::string("webrecorder_");
     for (auto i = 0; i < 10; i++)
-      filename.push_back('0' + rand() % 10);
+      filename.push_back(static_cast<char>('0' + rand() % 10));
     filename += ".tmp";
     return std::filesystem::temp_directory_path() / filename;
   }
@@ -398,7 +398,7 @@ void Logic::handle_response(Server::Request& request,
     return serve_error(request, url, status_code);
 
   log(Event::download_finished, static_cast<int>(status_code),
-    " ", response.data().size(), " ", url);
+    " ", static_cast<int>(response.data().size()), " ", url);
   const auto response_time = std::time(nullptr);
 
   serve_file(request, url, status_code,

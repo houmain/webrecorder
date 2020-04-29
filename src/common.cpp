@@ -110,7 +110,7 @@ bool is_punct(char c) {
 }
 
 char to_lower(char c) {
-  return std::tolower(static_cast<unsigned char>(c));
+  return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
 }
 
 bool starts_with(std::string_view str, std::string_view with) {
