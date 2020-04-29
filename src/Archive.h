@@ -10,7 +10,7 @@
 #include <condition_variable>
 #include <optional>
 
-class LossyCompressor;
+class ILossyCompressor;
 
 struct ArchiveFileInfo {
   uint64_t compressed_size;
@@ -49,7 +49,7 @@ public:
   ArchiveWriter& operator=(const ArchiveWriter&) = delete;
   ~ArchiveWriter();
 
-  void set_lossy_compressor(std::unique_ptr<LossyCompressor> lossy_compressor);
+  void set_lossy_compressor(std::unique_ptr<ILossyCompressor> lossy_compressor);
   bool open(std::filesystem::path filename);
   void move_on_close(std::filesystem::path filename, bool overwrite);
   bool close();
@@ -81,7 +81,7 @@ private:
   std::set<std::string> m_filenames;
 
   std::mutex m_zip_mutex;
-  std::unique_ptr<LossyCompressor> m_lossy_compressor;
+  std::unique_ptr<ILossyCompressor> m_lossy_compressor;
   void* m_zip{ };
   bool m_reading{ };
 

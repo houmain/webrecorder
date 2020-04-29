@@ -3,9 +3,15 @@
 #include "common.h"
 #include <optional>
 
-class LossyCompressor {
+class ILossyCompressor {
 public:
-  std::optional<ByteVector> try_compress(ByteView data);
+  virtual ~ILossyCompressor() = default;
+  virtual std::optional<ByteVector> try_compress(ByteView data) = 0;
+};
+
+class LossyCompressor : public ILossyCompressor {
+public:
+  std::optional<ByteVector> try_compress(ByteView data) override;
 
 private:
   int m_skip_files_below{ 100 << 10 };

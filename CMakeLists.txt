@@ -48,6 +48,7 @@ set(SOURCES ${SOURCES}
     libs/minizip/zip.c
     libs/minizip/unzip.c
     libs/minizip/ioapi.c
+    libs/stb/stb_impl.c
 )
 
 file(GLOB_RECURSE HEADERS include *.h *.hpp *.inc)

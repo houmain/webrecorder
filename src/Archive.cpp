@@ -199,7 +199,7 @@ ArchiveWriter::~ArchiveWriter() {
 }
 
 void ArchiveWriter::set_lossy_compressor(
-    std::unique_ptr<LossyCompressor> lossy_compressor) {
+    std::unique_ptr<ILossyCompressor> lossy_compressor) {
   auto lock = std::lock_guard(m_zip_mutex);
   m_lossy_compressor = std::move(lossy_compressor);
 }
