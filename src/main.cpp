@@ -32,7 +32,11 @@ int run(int argc, const char* argv[]) noexcept try {
   server.run(
     [&](unsigned short port) {
       const auto path = settings.url.substr(get_scheme_hostname_port(settings.url).size());
-      logic.set_local_server_url("http://127.0.0.1:" + std::to_string(port) + path);
+      const auto local_server_url = "http://127.0.0.1:" + std::to_string(port) + path;
+      logic.set_local_server_url(local_server_url);
+
+      if (settings.open_browser)
+        open_browser(local_server_url);
     });
   return 0;
 }

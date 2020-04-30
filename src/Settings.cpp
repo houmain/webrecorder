@@ -65,6 +65,7 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
     else if (argument == "--no-append") { settings.append = false; }
     else if (argument == "--no-download") { settings.download = false; }
     else if (argument == "--allow-lossy-compression") { settings.allow_lossy_compression = true; }
+    else if (argument == "--open-browser") { settings.open_browser = true; }
     else if (argument == "-h" || argument == "--help") {
       return false;
     }
@@ -130,6 +131,7 @@ void print_help_message(const char* argv0) {
     "  --block-hosts-file <file>  block hosts in file.\n"
     "  --inject-js-file <file>    inject JavaScript in every HTML file.\n"
     "  --patch-base-tag           patch base tag so URLs are relative to original host.\n"
+    "  --open-browser             open browser and navigate to requested URL.\n"
     "  --proxy <host[:port]>      set a HTTP proxy.\n"
     "  -h, --help  print this help.\n"
     "\n"

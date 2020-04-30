@@ -87,6 +87,11 @@ void write_output(const std::string& utf8) {
   write_output(utf8.c_str());
 }
 
+void open_browser(const std::string& url) {
+  if (std::system(("xdg-open \"" + url + "\"").c_str()))
+    std::system(("open \"" + url + "\"").c_str());
+}
+
 int main(int argc, const char* argv[]) {
   return run(argc, argv);
 }
@@ -185,6 +190,11 @@ void write_output(const char* utf8) {
 
 void write_output(const std::string& utf8) {
   write_output_wide(utf8_to_wide(utf8));
+}
+
+void open_browser(const std::string& url) {
+  ShellExecuteW(0, L"open", utf8_to_wide(url).c_str(),
+    NULL, NULL, SW_SHOWNORMAL);
 }
 
 int wmain(int argc, wchar_t* wargv[]) {

@@ -36,4 +36,6 @@ void log(Event event, Args&&... args) {
   (write_output(args), ...);
 }
 
+void open_browser(const std::string& url);
+
 extern int run(int argc, const char* argv[]) noexcept;
