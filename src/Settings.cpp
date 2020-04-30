@@ -39,6 +39,9 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
       settings.inject_javascript_file =
         std::filesystem::u8path(unquote(argv[i]));
     }
+    else if (argument == "--patch-base-tag") {
+      settings.patch_base_tag = true;
+    }
     else if (argument == "--proxy") {
       if (++i >= argc)
         return false;
@@ -126,6 +129,7 @@ void print_help_message(const char* argv0) {
     "  --allow-lossy-compression  allow lossy compression of big images.\n"
     "  --block-hosts-file <file>  block hosts in file.\n"
     "  --inject-js-file <file>    inject JavaScript in every HTML file.\n"
+    "  --patch-base-tag           patch base tag so URLs are relative to original host.\n"
     "  --proxy <host[:port]>      set a HTTP proxy.\n"
     "  -h, --help  print this help.\n"
     "\n"

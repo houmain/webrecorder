@@ -12,12 +12,14 @@ HtmlPatcher::HtmlPatcher(
       std::string base_url,
       std::string data,
       std::string inject_js_path,
+      bool patch_base_tag,
       std::string cookies,
       time_t response_time)
     : m_server_base(std::move(server_base)),
       m_data(std::move(data)),
       m_cookies(std::move(cookies)),
       m_inject_js_path(std::move(inject_js_path)),
+      m_patch_base_tag(patch_base_tag),
       m_response_time(response_time) {
 
   update_base_url(base_url);
@@ -88,9 +90,9 @@ void HtmlPatcher::parse_html() {
   }
 
   if (start_of_head) {
+    inject_patch_script({ *start_of_head, 0 });
     if (!has_base_tag)
       inject_base({ *start_of_head, 0 });
-    inject_patch_script({ *start_of_head, 0 });
   }
 }
 
@@ -109,15 +111,19 @@ std::string_view HtmlPatcher::get_link(std::string_view at) const {
 }
 
 void HtmlPatcher::inject_base(std::string_view at) {
-  auto base_script = "<base href='" +
-    std::string(get_scheme_hostname_port_path(m_base_url)) + "'>";
-  patch(at, std::move(base_script));
+  if (m_patch_base_tag) {
+    auto base_script = "<base href='" +
+      std::string(get_scheme_hostname_port_path(m_base_url)) + "'>";
+    patch(at, std::move(base_script));
+  }
 }
 
 void HtmlPatcher::apply_base(std::string_view at) {
   const auto link = get_link(at);
   update_base_url(to_absolute_url(link, m_base_url));
-  patch(link, m_base_url);
+
+  if (m_patch_base_tag)
+    patch(link, m_base_url);
 }
 
 void HtmlPatcher::update_base_url(std::string base_url) {

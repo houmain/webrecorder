@@ -8,6 +8,7 @@ public:
     std::string base_url,
     std::string data,
     std::string inject_js_path,
+    bool patch_base_tag,
     std::string cookies,
     time_t response_time);
 
@@ -33,6 +34,7 @@ private:
   const std::string m_data;
   const std::string m_cookies;
   const std::string m_inject_js_path;
+  const bool m_patch_base_tag;
   const time_t m_response_time;
   std::string m_base_url;
   std::vector<Patch> m_patches;

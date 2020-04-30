@@ -16,6 +16,7 @@ struct Settings {
   std::filesystem::path output_file;
   std::vector<std::filesystem::path> block_hosts_files;
   std::filesystem::path inject_javascript_file;
+  bool patch_base_tag{ false };
   std::string proxy_server;
   bool append{ true };
   bool download{ true };

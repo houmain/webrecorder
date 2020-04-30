@@ -471,6 +471,7 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
       m_server_base, url,
       convert_charset(data, (charset.empty() ? "utf-8" : charset), "utf-8"),
       (m_inject_javascript_code.empty() ? "" : inject_javascript_request),
+      m_settings.patch_base_tag,
       m_cookie_store.get_cookies_list(url),
       response_time);
 
