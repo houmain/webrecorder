@@ -502,6 +502,8 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
     }
     else if (!iequals_any(name,
           "Set-Cookie",
+          "Connection",
+          "Cache-Control"
           "Link",
           "Transfer-Encoding",
           "Access-Control-Allow-Origin",
@@ -511,9 +513,7 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
       response_header.emplace(name, value);
     }
 
-  // disable browser cache
-  const auto [begin, end] = response_header.equal_range("Cache-Control");
-  response_header.erase(begin, end);
+  response_header.emplace("Connection", "keep-alive");
   response_header.emplace("Cache-Control", "no-store");
 
   request.send_response(status_code, response_header, data);

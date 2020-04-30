@@ -48,8 +48,6 @@ namespace {
 } // namespace
 
 std::string get_message_utf8(std::error_code error) {
-  if (error.value() == 2) // End of File
-    return { };
   return error.message();
 }
 
