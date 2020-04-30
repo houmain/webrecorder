@@ -82,7 +82,7 @@ time_t parse_time(const std::string& string) {
   auto ss = std::istringstream(string);
   auto time = tm{ };
   ss >> std::get_time(&time, "%a, %d %b %Y %H:%M:%S GMT");
-  return std::mktime(&time);
+  return std::mktime(&time) - timezone;
 }
 
 ByteView as_byte_view(std::string_view data) {

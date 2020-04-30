@@ -9,6 +9,10 @@ void eq(const A& a, const B& b) {
 }
 
 void tests() {
+  eq(format_time(0), "Thu, 01 Jan 1970 00:00:00 GMT");
+  eq(parse_time("Thu, 01 Jan 1970 00:00:00 GMT"), 0);
+  eq(parse_time(format_time(1588262656)), 1588262656);
+
   eq(trim(" abc "), "abc");
   eq(trim("\t abc \n"), "abc");
 

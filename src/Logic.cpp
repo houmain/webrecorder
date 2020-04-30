@@ -400,8 +400,7 @@ void Logic::handle_response(Server::Request& request,
   if (response.error())
     return serve_error(request, url, status_code);
 
-  log(Event::download_finished, static_cast<int>(status_code),
-    " ", static_cast<int>(response.data().size()), " ", url);
+  log(Event::download_finished, status_code, " ", response.data().size(), " ", url);
   const auto response_time = std::time(nullptr);
 
   serve_file(request, url, status_code,

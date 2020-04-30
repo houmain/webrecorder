@@ -27,8 +27,10 @@ void write_output(int value);
 void write_output(const char* utf8);
 void write_output(const std::string& utf8);
 void write_output(Event event);
+template <typename T>
+void write_output(T value) { write_output(static_cast<int>(value)); }
 
-template<typename... Args>
+template <typename... Args>
 void log(Event event, Args&&... args) {
   auto guard = begin_output_line(event == Event::fatal);
   write_output(event);
