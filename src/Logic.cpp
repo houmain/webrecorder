@@ -519,6 +519,8 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
   request.send_response(status_code, response_header, data);
 
   log(Event::served, url);
+  if (m_settings.verbose)
+    log(Event::info, "served '", url, "' within ", request.age().count(), "ms");
 }
 
 void Logic::async_write_file(const std::string& identifying_url,

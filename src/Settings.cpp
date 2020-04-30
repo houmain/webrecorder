@@ -27,6 +27,9 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
         return false;
       settings.output_file = std::filesystem::u8path(unquote(argv[i]));
     }
+    else if (argument == "-v" || argument == "--verbose") {
+      settings.verbose = true;
+    }
     else if (argument == "--block-hosts-file") {
       if (++i >= argc)
         return false;

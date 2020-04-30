@@ -11,6 +11,7 @@ enum class RefreshPolicy {
 };
 
 struct Settings {
+  bool verbose{ false };
   std::string url;
   std::filesystem::path input_file;
   std::filesystem::path output_file;
@@ -22,6 +23,7 @@ struct Settings {
   bool download{ true };
   bool allow_lossy_compression{ false };
   RefreshPolicy refresh_policy{ RefreshPolicy::never };
+  bool open_browser{ false };
 };
 
 bool interpret_commandline(Settings& settings, int argc, const char* argv[]);

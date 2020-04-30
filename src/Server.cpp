@@ -10,6 +10,7 @@ std::shared_ptr<asio::io_service> sole_io_service() {
 }
 
 struct Server::Request::Impl {
+  std::chrono::high_resolution_clock::time_point received_at;
   std::shared_ptr<HttpServer::Request> request;
   std::shared_ptr<HttpServer::Response> response;
   ByteVector request_data;
@@ -47,6 +48,7 @@ struct Server::Impl : public HttpServer {
       [this](std::shared_ptr<HttpServer::Response> response,
              std::shared_ptr<HttpServer::Request> request) {
         auto request_impl = std::make_unique<::Server::Request::Impl>();
+        request_impl->received_at = std::chrono::high_resolution_clock::now();
         request_impl->response = std::move(response);
         request_impl->request = std::move(request);
         handle_request({ std::move(request_impl) });
@@ -112,6 +114,11 @@ Server::Request::Request(std::unique_ptr<Impl> impl)
 Server::Request::Request(Request&&) = default;
 Server::Request& Server::Request::operator=(Request&&) = default;
 Server::Request::~Request() = default;
+
+std::chrono::milliseconds Server::Request::age() const {
+  return std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::high_resolution_clock::now() - m_impl->received_at);
+}
 
 const std::string& Server::Request::method() const {
   return m_impl->request->method;

@@ -17,6 +17,7 @@ public:
     Request& operator=(Request&&);
     ~Request();
 
+    std::chrono::milliseconds age() const;
     const std::string& method() const;
     const std::string& path() const;
     const std::string& query() const;
