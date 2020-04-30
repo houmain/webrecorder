@@ -326,6 +326,9 @@ std::optional<CacheInfo> Logic::get_cache_info(const Server::Request& request,
   auto cache_info = CacheInfo{ };
   cache_info.expired = (age > max_age.value());
 
+  if (entry->status_code == StatusCode::redirection_moved_permanently)
+    cache_info.expired = false;
+
   if (auto it = entry->header.find("Last-Modified"); it != entry->header.end())
     cache_info.last_modified_time = parse_time(it->second);
 
