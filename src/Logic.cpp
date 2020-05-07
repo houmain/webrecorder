@@ -453,10 +453,6 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
     }
   }
 
-  auto content_length = std::string();
-  if (auto it = header.find("Content-Length"); it != header.end())
-    content_length = it->second;
-
   auto content_type = std::string();
   if (auto it = header.find("Content-Type"); it != header.end())
     content_type = it->second;
@@ -480,9 +476,6 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
     patched_data.emplace(
       convert_charset(patcher.get_patched(), "utf-8", (charset.empty() ? "utf-8" : charset)));
     data = as_byte_view(patched_data.value());
-
-    if (!content_length.empty())
-      content_length = std::to_string(data.size());
   }
 
   auto response_header = Header();
@@ -496,7 +489,7 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
       response_header.emplace(name, content_type);
     }
     else if (iequals(name, "Content-Length")) {
-      response_header.emplace(name, content_length);
+      response_header.emplace(name, std::to_string(data.size()));
     }
     else if (iequals(name, "Strict-Transport-Security")) {
       set_strict_transport_security(url,
