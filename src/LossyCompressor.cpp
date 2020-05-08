@@ -22,8 +22,8 @@ std::optional<ByteVector> LossyCompressor::try_compress(ByteView data) {
   auto components = 0;
   auto image = StbImagePtr(stbi_load_from_memory(
     reinterpret_cast<const unsigned char*>(data.data()),
-    static_cast<int>(data.size()), &width, &height, &components, STBI_rgb));
-  if (!image)
+    static_cast<int>(data.size()), &width, &height, &components, 0));
+  if (!image || components != STBI_rgb)
     return { };
 
   // limit dimensions
@@ -54,7 +54,7 @@ std::optional<ByteVector> LossyCompressor::try_compress(ByteView data) {
     std::memcpy(compressed.data() + offset, data, static_cast<size_t>(size));
   };
   if (!stbi_write_jpg_to_func(write_callback,
-      &compressed, width, height, components, image.get(), 80))
+      &compressed, width, height, components, image.get(), m_jpeg_quality))
     return { };
 
   // check if size was reduced
