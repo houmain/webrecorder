@@ -139,7 +139,8 @@ Client& Client::operator=(Client&&) = default;
 Client::~Client() = default;
 
 void Client::request(std::string_view url, std::string_view method,
-    Header header, ByteView data, HandleResponse handle_response) {
+    Header header, ByteView data, std::chrono::seconds timeout,
+    HandleResponse handle_response) {
 
   const auto scheme = get_scheme(url);
   const auto hostname_port = std::string(get_hostname_port(url));
@@ -151,8 +152,10 @@ void Client::request(std::string_view url, std::string_view method,
 
   const auto request = [&](auto client) {
     client->io_service = m_impl->io_service;
+    client->config.timeout_connect = timeout.count();
     client->config.proxy_server = m_impl->proxy_server;
-    client->request(std::string(method), std::string(path), as_string_view(data), header,
+    client->request(std::string(method), std::string(path),
+      as_string_view(data), header,
       [ client, handle_response = std::move(handle_response)](
           auto response, const std::error_code& error) {
         auto response_impl = std::make_unique<Response::Impl>();

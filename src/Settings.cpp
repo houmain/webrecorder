@@ -65,6 +65,18 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
       else
         return false;
     }
+    else if (argument == "--refresh-timeout") {
+      if (++i >= argc)
+        return false;
+      const auto timeout = std::atoi(unquote(argv[i]).data());
+      settings.refresh_timeout = std::chrono::seconds(timeout);
+    }
+    else if (argument == "--request-timeout") {
+      if (++i >= argc)
+        return false;
+      const auto timeout = std::atoi(unquote(argv[i]).data());
+      settings.request_timeout = std::chrono::seconds(timeout);
+    }
     else if (argument == "--no-append") { settings.append = false; }
     else if (argument == "--no-download") { settings.download = false; }
     else if (argument == "--allow-lossy-compression") { settings.allow_lossy_compression = true; }
@@ -128,6 +140,8 @@ void print_help_message(const char* argv0) {
     "                               when-expired\n"
     "                               when-expired-async\n"
     "                               always\n"
+    "  --refresh-timeout <sec.>   refresh timeout (default: 1).\n"
+    "  --request-timeout <sec.>   request timeout (default: 5).\n"
     "  --no-append                do not keep not requested files.\n"
     "  --no-download              do not download missing files.\n"
     "  --allow-lossy-compression  allow lossy compression of big images.\n"

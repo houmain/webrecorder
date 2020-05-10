@@ -35,7 +35,8 @@ public:
   ~Client();
 
   void request(std::string_view url, std::string_view method,
-    Header header, ByteView data, HandleResponse handle_response);
+    Header header, ByteView data, std::chrono::seconds timeout,
+    HandleResponse handle_response);
 
 private:
   struct Impl;

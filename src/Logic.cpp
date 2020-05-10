@@ -298,7 +298,9 @@ void Logic::forward_request(Server::Request request, const std::string& url,
 
   const auto& data = request.data();
   const auto& method = request.method();
-  m_client.request(url, method, std::move(header), data,
+  const auto& timeout = (cache_info ?
+    m_settings.refresh_timeout : m_settings.request_timeout);
+  m_client.request(url, method, std::move(header), data, timeout,
     [ this, url,
       request = std::make_shared<Server::Request>(std::move(request))
     ](Client::Response response) {

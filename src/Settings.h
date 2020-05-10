@@ -23,6 +23,8 @@ struct Settings {
   bool download{ true };
   bool allow_lossy_compression{ false };
   RefreshPolicy refresh_policy{ RefreshPolicy::never };
+  std::chrono::seconds refresh_timeout{ 1 };
+  std::chrono::seconds request_timeout{ 5 };
   bool open_browser{ false };
 };
 
