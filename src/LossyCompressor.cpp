@@ -11,6 +11,15 @@ namespace {
     void operator()(stbi_uc* image) const { stbi_image_free(image); }
   };
   using StbImagePtr = std::unique_ptr<stbi_uc, FreeStbImage>;
+
+  bool is_opaque(stbi_uc* image, int width, int height, int components) {
+    if (components != STBI_rgb_alpha)
+      return true;
+    for (auto i = 3; i < width * height * 4; i += 4)
+      if (image[i] != 0xFF)
+        return false;
+    return true;
+  }
 } // namespace
 
 std::optional<ByteVector> LossyCompressor::try_compress(ByteView data) {
@@ -23,7 +32,7 @@ std::optional<ByteVector> LossyCompressor::try_compress(ByteView data) {
   auto image = StbImagePtr(stbi_load_from_memory(
     reinterpret_cast<const unsigned char*>(data.data()),
     static_cast<int>(data.size()), &width, &height, &components, 0));
-  if (!image || components != STBI_rgb)
+  if (!image || !is_opaque(image.get(), width, height, components))
     return { };
 
   // limit dimensions
