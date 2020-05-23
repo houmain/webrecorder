@@ -23,7 +23,7 @@ namespace {
 } // namespace
 
 std::optional<ByteVector> LossyCompressor::try_compress(ByteView data) {
-  if (data.size() < m_skip_files_below)
+  if (static_cast<int>(data.size()) < m_skip_files_below)
     return { };
 
   auto width = 0;

@@ -49,11 +49,41 @@ set(SOURCES ${SOURCES}
     libs/minizip/unzip.c
     libs/minizip/ioapi.c
     libs/stb/stb_impl.c
+    libs/gumbo/src/attribute.c
+    libs/gumbo/src/char_ref.c
+    libs/gumbo/src/error.c
+    libs/gumbo/src/parser.c
+    libs/gumbo/src/string_buffer.c
+    libs/gumbo/src/string_piece.c
+    libs/gumbo/src/tag.c
+    libs/gumbo/src/tokenizer.c
+    libs/gumbo/src/utf8.c
+    libs/gumbo/src/util.c
+    libs/gumbo/src/vector.c
+    libs/zlib/src/adler32.c
+    libs/zlib/src/compress.c
+    libs/zlib/src/crc32.c
+    libs/zlib/src/deflate.c
+    libs/zlib/src/gzclose.c
+    libs/zlib/src/gzlib.c
+    libs/zlib/src/gzread.c
+    libs/zlib/src/gzwrite.c
+    libs/zlib/src/infback.c
+    libs/zlib/src/inffast.c
+    libs/zlib/src/inflate.c
+    libs/zlib/src/inftrees.c
+    libs/zlib/src/trees.c
+    libs/zlib/src/uncompr.c
+    libs/zlib/src/zutil.c
+)
+
+set(INCLUDES ${INCLUDES}
+    libs/gumbo/src
+    libs/zlib/src
 )
 
 file(GLOB_RECURSE HEADERS include *.h *.hpp *.inc)
 
-link_libraries(gumbo z)
 add_compile_definitions(NOCRYPT UNICODE ASIO_STANDALONE USE_STANDALONE_ASIO)
 
 if (WIN32)
@@ -61,7 +91,8 @@ if (WIN32)
     link_libraries(ws2_32 wsock32)
 
     set(SOURCES ${SOURCES} libs/minizip/iowin32.c)
-    set(INCLUDES libs/asio/include)
+    set(INCLUDES ${INCLUDES} libs/asio/include)
+    set(INCLUDES ${INCLUDES} libs/gumbo/src/visualc)
 endif()
 
 find_package(OpenSSL REQUIRED)

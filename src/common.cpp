@@ -82,12 +82,16 @@ time_t parse_time(const std::string& string) {
   auto ss = std::istringstream(string);
   auto time = tm{ };
   ss >> std::get_time(&time, "%a, %d %b %Y %H:%M:%S GMT");
+#if !defined(_WIN32)
   return std::mktime(&time) - timezone;
+#else
+  return _mkgmtime64(&time);
+#endif
 }
 
 ByteView as_byte_view(std::string_view data) {
   const auto begin = reinterpret_cast<const std::byte*>(data.data());
-  return { begin, static_cast<ByteView::index_type>(data.size()) };
+  return { begin, static_cast<ByteView::size_type>(data.size()) };
 }
 
 std::string_view as_string_view(ByteView data) {
