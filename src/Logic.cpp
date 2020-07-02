@@ -42,6 +42,10 @@ namespace {
     return url;
   }
 
+  bool is_success(StatusCode status_code) {
+    return static_cast<int>(status_code) / 100 == 2;
+  }
+
   bool is_redirect(StatusCode status_code) {
     return static_cast<int>(status_code) / 100 == 3;
   }
@@ -395,7 +399,7 @@ void Logic::handle_response(Server::Request& request,
     const std::string& url, Client::Response response) {
 
   const auto status_code = response.status_code();
-  if (status_code != StatusCode::success_ok)
+  if (!is_success(status_code) && !is_redirect(status_code))
     if (serve_from_archive(request, url, true))
       return log(Event::download_omitted, url);
 
