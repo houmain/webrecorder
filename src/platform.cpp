@@ -27,7 +27,7 @@ void write_output(Event event) {
 std::string read_utf8_textfile(const std::filesystem::path& filename) {
   auto file = std::ifstream(filename);
   if (!file.good())
-    throw std::runtime_error("reading '" + filename.u8string() + "' failed");
+    throw std::runtime_error("reading '" + path_to_utf8(filename) + "' failed");
   auto buffer = std::stringstream();
   buffer << file.rdbuf();
   return { buffer.str() };

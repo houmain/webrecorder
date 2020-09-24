@@ -112,10 +112,10 @@ Logic::Logic(Settings* settings)
   : m_settings(*settings),
     m_client(m_settings.proxy_server) {
 
-  m_settings.input_file = std::filesystem::u8path(
-    get_legal_filename(m_settings.input_file.u8string()));
-  m_settings.output_file = std::filesystem::u8path(
-    get_legal_filename(m_settings.output_file.u8string()));
+  m_settings.input_file = utf8_to_path(
+    get_legal_filename(path_to_utf8(m_settings.input_file)));
+  m_settings.output_file = utf8_to_path(
+    get_legal_filename(path_to_utf8(m_settings.output_file)));
 
   if (!m_settings.input_file.empty()) {
     auto archive_reader = std::make_unique<ArchiveReader>();

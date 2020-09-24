@@ -9,23 +9,22 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
     if (argument == "-u" || argument == "--url") {
       if (++i >= argc)
         return false;
-      settings.url = url_from_input(std::string(unquote(argv[i])));
+      settings.url = url_from_input(unquote(argv[i]));
     }
     else if (argument == "-f" || argument == "--file") {
       if (++i >= argc)
         return false;
-      settings.input_file = settings.output_file =
-        std::filesystem::u8path(unquote(argv[i]));
+      settings.input_file = settings.output_file = utf8_to_path(unquote(argv[i]));
     }
     else if (argument == "-i" || argument == "--input") {
       if (++i >= argc)
         return false;
-      settings.input_file = std::filesystem::u8path(unquote(argv[i]));
+      settings.input_file = utf8_to_path(unquote(argv[i]));
     }
     else if (argument == "-o" || argument == "--output") {
       if (++i >= argc)
         return false;
-      settings.output_file = std::filesystem::u8path(unquote(argv[i]));
+      settings.output_file = utf8_to_path(unquote(argv[i]));
     }
     else if (argument == "-v" || argument == "--verbose") {
       settings.verbose = true;
@@ -33,14 +32,12 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
     else if (argument == "--block-hosts-file") {
       if (++i >= argc)
         return false;
-      settings.block_hosts_files.push_back(
-        std::filesystem::u8path(unquote(argv[i])));
+      settings.block_hosts_files.push_back(utf8_to_path(unquote(argv[i])));
     }
     else if (argument == "--inject-js-file") {
       if (++i >= argc)
         return false;
-      settings.inject_javascript_file =
-        std::filesystem::u8path(unquote(argv[i]));
+      settings.inject_javascript_file = utf8_to_path(unquote(argv[i]));
     }
     else if (argument == "--patch-base-tag") {
       settings.patch_base_tag = true;
@@ -87,10 +84,10 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
     else if (i == argc - 1) {
       // final argument can be url or filename
       auto error = std::error_code{ };
-      auto filename = std::filesystem::u8path(unquote(argument));
+      auto filename = utf8_to_path(unquote(argument));
       const auto is_file = std::filesystem::exists(filename, error);
       if (settings.url.empty() && !is_file)
-        settings.url = url_from_input(filename.u8string());
+        settings.url = url_from_input(path_to_utf8(filename));
       else
         settings.input_file = settings.output_file = filename;
 
@@ -98,7 +95,7 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
           settings.input_file.empty() &&
           settings.output_file.empty())
         settings.input_file = settings.output_file =
-          std::filesystem::u8path(filename_from_url(settings.url));
+          utf8_to_path(filename_from_url(settings.url));
     }
     else {
       return false;

@@ -6,6 +6,23 @@
 #include <cstring>
 #include <cctype>
 
+std::filesystem::path utf8_to_path(std::string_view utf8_string) {
+#if defined(__cpp_char8_t)
+  return std::filesystem::path(
+    reinterpret_cast<const char8_t*>(utf8_string.data()),
+    reinterpret_cast<const char8_t*>(utf8_string.data() + utf8_string.size()));
+#else
+  return std::filesystem::u8path(utf8_string);
+#endif
+}
+
+std::string path_to_utf8(const std::filesystem::path& path) {
+  const auto u8string = path.u8string();
+  return std::string(
+    reinterpret_cast<const char*>(u8string.data()),
+    reinterpret_cast<const char*>(u8string.data() + u8string.size()));
+}
+
 extern "C" int siphash(const uint8_t* in, const size_t inlen,
   const uint8_t* k, uint8_t* out, const size_t outlen);
 

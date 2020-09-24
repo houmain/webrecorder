@@ -3,6 +3,7 @@
 #include "libs/nonstd/span.hpp"
 #include <vector>
 #include <string>
+#include <filesystem>
 
 using ByteVector = std::vector<std::byte>;
 using ByteView = nonstd::span<const std::byte>;
@@ -33,6 +34,8 @@ bool iequals_any(T&& a, S&&... b) {
   return (iequals(a, b) || ...);
 }
 
+std::filesystem::path utf8_to_path(std::string_view utf8_string);
+std::string path_to_utf8(const std::filesystem::path& path);
 StringViewPair split_content_type(std::string_view content_type);
 std::string get_content_type(std::string_view mime_type, std::string_view charset);
 std::string convert_charset(std::string data, std::string_view from, std::string_view to);
