@@ -147,7 +147,7 @@ void print_help_message(const char* argv0) {
     "  --patch-base-tag           patch base tag so URLs are relative to original host.\n"
     "  --open-browser             open browser and navigate to requested URL.\n"
     "  --proxy <host[:port]>      set a HTTP proxy.\n"
-    "  -h, --help  print this help.\n"
+    "  -h, --help                 print this help.\n"
     "\n"
     "All Rights Reserved.\n"
     "This program comes with absolutely no warranty.\n"
