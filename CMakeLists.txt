@@ -12,7 +12,7 @@ if(GIT_FOUND)
 endif()
 configure_file("src/version.h.in" "${CMAKE_SOURCE_DIR}/src/_version.h")
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(SOURCES
@@ -79,6 +79,7 @@ set(SOURCES ${SOURCES}
 )
 
 set(INCLUDES ${INCLUDES}
+    libs/asio/include
     libs/gumbo/src
     libs/zlib/src
 )
@@ -92,7 +93,6 @@ if (WIN32)
     link_libraries(ws2_32 wsock32)
 
     set(SOURCES ${SOURCES} libs/minizip/iowin32.c)
-    set(INCLUDES ${INCLUDES} libs/asio/include)
     set(INCLUDES ${INCLUDES} libs/gumbo/src/visualc)
 endif()
 
