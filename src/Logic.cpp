@@ -233,7 +233,9 @@ void Logic::handle_request(Server::Request request) {
 
   if (ends_with(request.path(), set_cookie_request)) {
     m_cookie_store.set(url, as_string_view(request.data()));
-    return request.send_response(StatusCode::success_no_content, { }, { });
+    return request.send_response(StatusCode::success_no_content, {
+      { "Access-Control-Allow-Origin", "*" }
+     }, { });
   }
 
   if (m_blocked_hosts && m_blocked_hosts->contains(url))
@@ -260,10 +262,12 @@ void Logic::handle_request(Server::Request request) {
 
 void Logic::send_cors_response(Server::Request request) {
   auto response_header = Header();
+  response_header.emplace("Cache-Control", "no-store");
   response_header.emplace("Access-Control-Max-Age", "-1");
   for (const auto& [name, value] : request.header())
-    if (iequals(name, "Access-Control-Request-Origin")) {
-      response_header.emplace("Access-Control-Allow-Origin", m_server_base);
+    if (iequals(name, "Origin")) {
+      response_header.emplace("Access-Control-Allow-Origin", m_local_server_base);
+      response_header.emplace("Access-Control-Allow-Credentials", "true");
     }
     else if (iequals(name, "Access-Control-Request-Method")) {
       response_header.emplace("Access-Control-Allow-Method", value);
@@ -283,7 +287,10 @@ void Logic::forward_request(Server::Request request, const std::string& url,
 
   auto header = Header();
   for (const auto& [name, value] : request.header())
-    if (iequals_any(name, "Referer", "Origin")) {
+    if (iequals(name, "Origin")) {
+      header.emplace(name, m_server_base);
+    }
+    else if (iequals(name, "Referer")) {
       const auto relative_url = unpatch_url(to_relative_url(value, m_local_server_base));
       header.emplace(name, to_absolute_url(relative_url, url));
     }
@@ -485,6 +492,8 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
   }
 
   auto response_header = Header();
+  auto cors_allow_origin = std::string_view();
+  auto cors_allow_credentials = false;
   for (const auto& [name, value] : header)
     if (iequals(name, "Location")) {
       const auto location = to_absolute_url(value, url);
@@ -501,18 +510,36 @@ void Logic::serve_file(Server::Request& request, const std::string& url,
       set_strict_transport_security(url,
         (value.find("includeSubDomains") != std::string::npos));
     }
+    else if (iequals(name, "Access-Control-Allow-Credentials")) {
+      cors_allow_credentials = (value == "true");
+    }
+    else if (iequals(name, "Access-Control-Allow-Origin")) {
+      cors_allow_origin = (value == "*" ? value : m_local_server_base);
+    }
     else if (!iequals_any(name,
           "Set-Cookie",
           "Connection",
           "Cache-Control"
           "Link",
           "Transfer-Encoding",
-          "Access-Control-Allow-Origin",
           "Timing-Allow-Origin",
           "Content-Security-Policy",
           "Content-Security-Policy-Report-Only")) {
       response_header.emplace(name, value);
     }
+
+  if (auto it = request.header().find("Origin"); it != request.header().end())
+    cors_allow_origin = it->second;
+
+  if (!cors_allow_origin.empty() || cors_allow_credentials) {
+    if (cors_allow_credentials) {
+      response_header.emplace("Access-Control-Allow-Origin", cors_allow_origin);
+      response_header.emplace("Access-Control-Allow-Credentials", "true");
+    }
+    else {
+      response_header.emplace("Access-Control-Allow-Origin", "*");
+    }
+  }
 
   response_header.emplace("Connection", "keep-alive");
   response_header.emplace("Cache-Control", "no-store");
