@@ -43,11 +43,11 @@ namespace {
   }
 
   bool is_success(StatusCode status_code) {
-    return static_cast<int>(status_code) / 100 == 2;
+    return (static_cast<int>(status_code) / 100 == 2);
   }
 
   bool is_redirect(StatusCode status_code) {
-    return static_cast<int>(status_code) / 100 == 3;
+    return (status_code == StatusCode::redirection_moved_permanently);
   }
 
   std::string url_to_regex(std::string_view url, bool sub_domains = false) {
