@@ -290,13 +290,11 @@ void Logic::forward_request(Server::Request request, const std::string& url,
     if (iequals(name, "Origin")) {
       header.emplace(name, m_server_base);
     }
-    else if (iequals(name, "Referer")) {
-      const auto relative_url = unpatch_url(to_relative_url(value, m_local_server_base));
-      header.emplace(name, to_absolute_url(relative_url, url));
-    }
-    else if (!iequals_any(name, "Host", "Accept-Encoding")) {
+    else if (!iequals_any(name, "Host", "Accept-Encoding", "Referer")) {
       header.emplace(name, value);
     }
+
+  header.emplace("Referer", m_server_base);
 
   m_cookie_store.for_each_cookie(url, [&](const auto& cookie) {
     header.emplace("Cookie", cookie);
