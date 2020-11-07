@@ -34,7 +34,7 @@ set(SOURCES
 
 if(NOT MSVC)
     set_source_files_properties(${SOURCES}
-       PROPERTIES COMPILE_FLAGS  "-Wall -Wextra -Wsign-conversion -Wconversion")
+        PROPERTIES COMPILE_FLAGS  "-Wall -Wextra -Wsign-conversion -Wconversion")
     find_package(Threads REQUIRED)
     link_libraries(${CMAKE_THREAD_LIBS_INIT})
     link_libraries(stdc++fs)
@@ -87,6 +87,11 @@ set(INCLUDES ${INCLUDES}
 file(GLOB_RECURSE HEADERS include *.h *.hpp *.inc)
 
 add_compile_definitions(NOCRYPT UNICODE ASIO_STANDALONE USE_STANDALONE_ASIO)
+
+option(USE_ICONV "Use iconv for charset conversion" ON)
+if(USE_ICONV)
+    add_compile_definitions(USE_ICONV)
+endif()
 
 if (WIN32)
     add_compile_definitions(_WIN32_WINNT=0x0501)

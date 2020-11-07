@@ -29,6 +29,7 @@ extern "C" int siphash(const uint8_t* in, const size_t inlen,
 
 #if defined(USE_ICONV)
 # include <iconv.h>
+# include <optional>
 
 inline std::optional<std::string> convert_charset_iconv(std::string_view string,
     std::string_view from, std::string_view to) {
@@ -57,7 +58,7 @@ inline std::optional<std::string> convert_charset_iconv(std::string_view string,
   ::iconv_close(conv);
   return { std::move(dest) };
 }
-#endif
+#endif // USE_ICONV
 
 std::string convert_charset(std::string data, std::string_view from, std::string_view to) {
   if (!iequals(from, to))
