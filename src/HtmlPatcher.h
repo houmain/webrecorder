@@ -9,6 +9,7 @@ public:
     std::string data,
     std::string inject_js_path,
     bool patch_base_tag,
+    bool patch_title,
     std::string cookies,
     time_t response_time);
 
@@ -20,6 +21,7 @@ private:
   std::string_view get_link(std::string_view at) const;
   void inject_base(std::string_view at);
   void apply_base(std::string_view at);
+  void patch_title(std::string_view title);
   void inject_patch_script(std::string_view at);
   void remove_region(std::string_view at);
   void patch(std::string_view at, std::string patch);
@@ -35,6 +37,7 @@ private:
   const std::string m_cookies;
   const std::string m_inject_js_path;
   const bool m_patch_base_tag;
+  const bool m_patch_title;
   const time_t m_response_time;
   std::string m_base_url;
   std::vector<Patch> m_patches;

@@ -13,6 +13,7 @@ HtmlPatcher::HtmlPatcher(
       std::string data,
       std::string inject_js_path,
       bool patch_base_tag,
+      bool patch_title,
       std::string cookies,
       time_t response_time)
     : m_server_base(std::move(server_base)),
@@ -20,6 +21,7 @@ HtmlPatcher::HtmlPatcher(
       m_cookies(std::move(cookies)),
       m_inject_js_path(std::move(inject_js_path)),
       m_patch_base_tag(patch_base_tag),
+      m_patch_title(patch_title),
       m_response_time(response_time) {
 
   update_base_url(base_url);
@@ -48,15 +50,23 @@ void HtmlPatcher::parse_html() {
     const auto& element = node->v.element;
 
     switch (element.tag) {
-      case GUMBO_TAG_HEAD: {
+      case GUMBO_TAG_HEAD:
         if (element.original_tag.data)
           start_of_head = element.original_tag.data + element.original_tag.length;
         break;
-      }
+
       case GUMBO_TAG_BASE:
         if (const auto attrib = gumbo_get_attribute(&element.attributes, "href"))
           apply_base(range(attrib->original_value));
         has_base_tag = true;
+        break;
+
+      case GUMBO_TAG_TITLE:
+        if (m_patch_title) {
+          const auto begin = element.original_tag.data + element.original_tag.length;
+          const auto end =  element.original_end_tag.data;
+          patch_title({ begin, static_cast<size_t>(end - begin) });
+        }
         break;
 
       case GUMBO_TAG_META:
@@ -132,6 +142,12 @@ void HtmlPatcher::apply_base(std::string_view at) {
 
   if (m_patch_base_tag)
     patch(link, m_base_url);
+}
+
+void HtmlPatcher::patch_title(std::string_view title) {
+  const auto hostname = get_hostname(m_server_base);
+  if (!icontains(title, hostname))
+    patch(title, std::string(trim(title)) + " [" + std::string(hostname) + "]");
 }
 
 void HtmlPatcher::update_base_url(std::string base_url) {

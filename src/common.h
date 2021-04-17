@@ -29,6 +29,7 @@ void replace_all(std::string& data, std::string_view search, std::string_view re
 ByteView as_byte_view(std::string_view data);
 std::string_view as_string_view(ByteView data);
 bool iequals(std::string_view s1, std::string_view s2);
+bool icontains(std::string_view s1, std::string_view s2);
 template<typename T, typename... S>
 bool iequals_any(T&& a, S&&... b) {
   return (iequals(a, b) || ...);

@@ -124,6 +124,11 @@ bool iequals(std::string_view s1, std::string_view s2) {
       [](char a, char b) { return to_lower(a) == to_lower(b); });
 }
 
+bool icontains(std::string_view s1, std::string_view s2) {
+  return std::search(s1.begin(), s1.end(), s2.begin(), s2.end(),
+    [](char ch1, char ch2) { return std::toupper(ch1) == std::toupper(ch2); }) != s1.end();
+}
+
 bool is_space(char c) {
   return std::isspace(static_cast<unsigned char>(c));
 }

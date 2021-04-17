@@ -42,6 +42,9 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
     else if (argument == "--patch-base-tag") {
       settings.patch_base_tag = true;
     }
+    else if (argument == "--patch-title") {
+      settings.patch_title = true;
+    }
     else if (argument == "--proxy") {
       if (++i >= argc)
         return false;
