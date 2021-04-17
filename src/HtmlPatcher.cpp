@@ -59,6 +59,14 @@ void HtmlPatcher::parse_html() {
         has_base_tag = true;
         break;
 
+      case GUMBO_TAG_META:
+        if (const auto attrib = gumbo_get_attribute(&element.attributes, "http-equiv"))
+          if (iequals(attrib->value, "content-security-policy")) {
+            remove_region(range({ element.original_tag.data, element.original_tag.length }));
+            continue;;
+          }
+        break;
+
       default:
         break;
     }

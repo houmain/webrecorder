@@ -125,7 +125,7 @@ void print_help_message(const char* argv0) {
 #endif
 
   printf(
-    "webrecorder %s(c) 2019-2020 by Albert Kalchmair\n"
+    "webrecorder %s(c) 2019-2021 by Albert Kalchmair\n"
     "\n"
     "Usage: %s [-options] [url|file]\n"
     "  -u, --url <url>            set initial request URL.\n"
