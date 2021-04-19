@@ -5,7 +5,7 @@
 template<typename A, typename B>
 void eq(const A& a, const B& b) {
   if (!(a == b))
-    std::raise(SIGINT);
+    std::raise(SIGSEGV);
 }
 
 void tests() {
@@ -155,6 +155,13 @@ void tests() {
   eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/sub/file"), "http://www.a.com:8080/sub/");
   eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/file?query"), "http://www.a.com:8080/");
   eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/file#fragment"), "http://www.a.com:8080/");
+
+  eq(get_file_extension("http://www.a.com:8080/file?query"), "");
+  eq(get_file_extension("http://www.a.com:8080/file.txt?query"), "txt");
+  eq(get_file_extension("http://www.a.com:8080/file.PNG?query"), "PNG");
+  eq(get_file_extension("http://www.a.com:8080/file.1234?query"), "1234");
+  eq(get_file_extension("http://www.a.com:8080/file.12345?query"), "");
+  eq(get_file_extension("http://www.a.com:8080/test.xyz/file?query"), "");
 
   eq(unpatch_url("/file?query"), "/file?query");
   eq(unpatch_url("/http://www.a.com/file?query"), "http://www.a.com/file?query");

@@ -20,8 +20,13 @@ namespace {
 
   bool is_likely_compressible(std::string_view filename) {
     const auto extension = get_file_extension(filename);
-    return (!iequals_any(extension,
-      "jpg", "jpeg", "png", "gif", "webp", "otf", "woff", "woff2"));
+    return (iequals_any(extension, "",
+      "txt", "md",
+      "htm", "html", "php", "asp", "aspx", "jsp", "shtml", "cfm",
+      "css", "js",
+      "svg", "bmp", "tga",
+      "pdf", "doc", "ppt", "xls", "rtf",
+      "json", "xml", "csv"));
   }
 
   std::filesystem::path resolve_collision(const std::filesystem::path& target,

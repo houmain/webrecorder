@@ -425,7 +425,8 @@ std::string_view get_file_extension(LStringView url) {
   auto dot = path.rfind('.');
   auto slash = path.rfind('/');
   if (dot != std::string_view::npos && dot > slash)
-    return path.substr(dot + 1);
+    if (path.size() - dot <= 5)
+      return path.substr(dot + 1);
   return { };
 }
 
