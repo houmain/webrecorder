@@ -1,6 +1,7 @@
 
 #include "common.h"
 #include "libs/utf8/utf8.h"
+#include <random>
 #include <sstream>
 #include <iomanip>
 #include <cstring>
@@ -437,4 +438,42 @@ std::string_view unpatch_url(LStringView url) {
       return url.substr(1);
   }
   return url;
+}
+
+std::string get_identifying_url(std::string url, ByteView request_data) {
+  if (!request_data.empty()) {
+    const auto delim = (url.find('?') != std::string::npos ? '&' : '?');
+    url = url + delim + get_hash(request_data);
+  }
+  return url;
+}
+
+std::string url_to_regex(std::string_view url, bool sub_domains) {
+  auto regex = std::string(url);
+  replace_all(regex, "http://", "https?://");
+  if (sub_domains)
+    replace_all(regex, "://", "://([^/]+.)?");
+  replace_all(regex, ".", "\\.");
+  replace_all(regex, "/", "\\/");
+  return "^" + regex + ".*";
+}
+
+std::string generate_id(int length) {
+  auto rand = std::random_device();
+  auto generator = std::mt19937(rand());
+  auto half = std::uniform_int_distribution<>(0, 127);
+  auto full = std::uniform_int_distribution<>(0, 255);
+  auto ss = std::stringstream();
+  for (auto i = 0; i < length; ++i)
+    ss << std::hex << std::setfill('0') << std::setw(2) <<
+      (i == 0 ? half(generator) : full(generator));
+  return ss.str();
+}
+
+std::filesystem::path generate_temporary_filename(std::string filename) {
+  auto rand = std::random_device();
+  for (auto i = 0; i < 10; i++)
+    filename.push_back(static_cast<char>('0' + rand() % 10));
+  filename += ".tmp";
+  return std::filesystem::temp_directory_path() / filename;
 }

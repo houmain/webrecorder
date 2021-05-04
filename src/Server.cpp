@@ -142,8 +142,11 @@ ByteView Server::Request::data() const {
 
 void Server::Request::send_response(StatusCode status_code,
     const Header& header, ByteView data) {
-  m_impl->response->write(status_code, as_string_view(data), header);
-  m_impl->response.reset();
+  assert(!response_sent());
+  if (m_impl->response) {
+    m_impl->response->write(status_code, as_string_view(data), header);
+    m_impl->response.reset();
+  }
 }
 
 bool Server::Request::response_sent() const {

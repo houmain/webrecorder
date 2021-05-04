@@ -50,18 +50,44 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
         return false;
       settings.proxy_server = unquote(argv[i]);
     }
-    else if (argument == "-r" || argument == "--refresh") {
+    else if (argument == "-d" || argument == "--download") {
       if (++i >= argc)
         return false;
       const auto policy = unquote(argv[i]);
-      if (policy == "never")
-        settings.refresh_policy = RefreshPolicy::never;
-      else if (policy == "when-expired")
-        settings.refresh_policy = RefreshPolicy::when_expired;
-      else if (policy == "when-expired-async")
-        settings.refresh_policy = RefreshPolicy::when_expired_async;
+      if (policy == "standard")
+        settings.download_policy = DownloadPolicy::standard;
       else if (policy == "always")
-        settings.refresh_policy = RefreshPolicy::always;
+        settings.download_policy = DownloadPolicy::always;
+      else if (policy == "never")
+        settings.download_policy = DownloadPolicy::never;
+      else
+        return false;
+    }
+    else if (argument == "-s" || argument == "--serve") {
+      if (++i >= argc)
+        return false;
+      const auto policy = unquote(argv[i]);
+      if (policy == "latest")
+        settings.serve_policy = ServePolicy::latest;
+      else if (policy == "last")
+        settings.serve_policy = ServePolicy::last_archived;
+      else if (policy == "first")
+        settings.serve_policy = ServePolicy::first_archived;
+      else
+        return false;
+    }
+    else if (argument == "-a" || argument == "--archive") {
+      if (++i >= argc)
+        return false;
+      const auto policy = unquote(argv[i]);
+      if (policy == "latest")
+        settings.archive_policy = ArchivePolicy::latest;
+      else if (policy == "first")
+        settings.archive_policy = ArchivePolicy::first;
+      else if (policy == "latest-and-first")
+        settings.archive_policy = ArchivePolicy::latest_and_first;
+      else if (policy == "requested")
+        settings.archive_policy = ArchivePolicy::requested;
       else
         return false;
     }
@@ -69,16 +95,18 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
       if (++i >= argc)
         return false;
       const auto timeout = std::atoi(unquote(argv[i]).data());
+      if (timeout <= 0)
+        return false;
       settings.refresh_timeout = std::chrono::seconds(timeout);
     }
     else if (argument == "--request-timeout") {
       if (++i >= argc)
         return false;
       const auto timeout = std::atoi(unquote(argv[i]).data());
+      if (timeout <= 0)
+        return false;
       settings.request_timeout = std::chrono::seconds(timeout);
     }
-    else if (argument == "--no-append") { settings.append = false; }
-    else if (argument == "--no-download") { settings.download = false; }
     else if (argument == "--allow-lossy-compression") { settings.allow_lossy_compression = true; }
     else if (argument == "--open-browser") { settings.open_browser = true; }
     else if (argument == "-h" || argument == "--help") {
@@ -135,19 +163,25 @@ void print_help_message(const char* argv0) {
     "  -f, --file <file>          set input/output file.\n"
     "  -i, --input <file>         set input file.\n"
     "  -o, --output <file>        set output file.\n"
-    "  -r, --refresh <mode>       refresh policy:\n"
-    "                               never (default)\n"
-    "                               when-expired\n"
-    "                               when-expired-async\n"
-    "                               always\n"
-    "  --refresh-timeout <sec.>   refresh timeout (default: 1).\n"
-    "  --request-timeout <sec.>   request timeout (default: 5).\n"
-    "  --no-append                do not keep not requested files.\n"
-    "  --no-download              do not download missing files.\n"
+    "  -d, --download <policy>    download policy:\n"
+    "                                 standard (default)\n"
+    "                                 always\n"
+    "                                 never\n"
+    "  -s, --serve <policy>       serve policy:\n"
+    "                                 latest (default)\n"
+    "                                 last\n"
+    "                                 first\n"
+    "  -a, --archive <policy>     archive policy:\n"
+    "                                 latest (default)\n"
+    "                                 first\n"
+    "                                 latest-and-first\n"
+    "                                 requested\n"
+    "  --refresh-timeout <secs>   refresh timeout (default: 1).\n"
+    "  --request-timeout <secs>   request timeout (default: 5).\n"
     "  --allow-lossy-compression  allow lossy compression of big images.\n"
     "  --block-hosts-file <file>  block hosts in file.\n"
     "  --inject-js-file <file>    inject JavaScript in every HTML file.\n"
-    "  --patch-base-tag           patch base tag so URLs are relative to original host.\n"
+    "  --patch-base-tag           patch base so URLs are relative to original host.\n"
     "  --open-browser             open browser and navigate to requested URL.\n"
     "  --proxy <host[:port]>      set a HTTP proxy.\n"
     "  -h, --help                 print this help.\n"

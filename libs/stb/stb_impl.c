@@ -33,6 +33,7 @@ static unsigned char* compress_for_stbiw(
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STBI_WRITE_NO_STDIO
+#include <stdio.h>
 #include "libs/stb/stb_image_write.h"
 
 

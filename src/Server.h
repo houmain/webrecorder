@@ -7,6 +7,14 @@
 using StatusCode = SimpleWeb::StatusCode;
 using Header = SimpleWeb::CaseInsensitiveMultimap;
 
+inline bool is_success(StatusCode status_code) {
+  return (static_cast<int>(status_code) / 100 == 2);
+}
+
+inline bool is_redirect(StatusCode status_code) {
+  return (status_code == StatusCode::redirection_moved_permanently);
+}
+
 class Server final {
 public:
   class Request final {

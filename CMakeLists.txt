@@ -29,6 +29,7 @@ set(SOURCES
     src/Settings.cpp
     src/HostList.cpp
     src/LossyCompressor.cpp
+    src/CacheInfo.cpp
     src/test.cpp
 )
 

@@ -2,7 +2,7 @@
 
 #include "common.h"
 #include <functional>
-#include <set>
+#include <map>
 #include <deque>
 #include <filesystem>
 #include <thread>
@@ -20,22 +20,36 @@ struct ArchiveFileInfo {
 
 class ArchiveReader final {
 public:
+  enum FileVersion {
+    top,
+    overlay,
+    base,
+  };
+
   ArchiveReader() = default;
   ArchiveReader(const ArchiveReader&) = delete;
   ArchiveReader& operator=(const ArchiveReader&) = delete;
   ~ArchiveReader();
 
+  void set_overlay_path(std::string path);
   bool open(const std::filesystem::path& filename);
   void close();
-  std::optional<ArchiveFileInfo> get_file_info(const std::string& filename) const;
-  ByteVector read(const std::string& filename) const;
+
+  std::optional<ArchiveFileInfo> get_file_info(
+    const std::string& filename, FileVersion version = top) const;
+  ByteVector read(const std::string& filename,
+    FileVersion version = top) const;
+
   void for_each_file(const std::function<void(std::string)>& callback) const;
 
 private:
   void* acquire_context() const;
   void return_context(void* context) const;
+  std::optional<ArchiveFileInfo> do_get_file_info(const std::string& filename) const;
+  ByteVector do_read(const std::string& filename) const;
 
   std::filesystem::path m_filename;
+  std::string m_overlay_path;
   mutable std::mutex m_mutex;
   mutable std::vector<void*> m_unzip_contexts;
 };
@@ -51,6 +65,7 @@ public:
 
   void set_lossy_compressor(std::unique_ptr<ILossyCompressor> lossy_compressor);
   bool open(std::filesystem::path filename);
+  bool is_open() const { return !m_filename.empty(); }
   void move_on_close(std::filesystem::path filename, bool overwrite);
   bool close();
   bool write(const std::string& filename, ByteView data,
@@ -59,11 +74,12 @@ public:
     time_t modification_time, bool allow_lossy_compression,
     std::function<void(bool)>&& on_complete);
   bool contains(const std::string& filename) const;
+  std::optional<time_t> get_modification_time(const std::string& filename) const;
   void async_read(const std::string& filename,
     std::function<void(ByteVector, time_t)>&& on_complete);
 
 private:
-  bool update_filenames(const std::string& filename);
+  bool update_contents(const std::string& filename, time_t modification_time);
   bool reopen(bool for_reading);
   void do_close();
   bool do_write(const std::string& filename, ByteView data,
@@ -78,7 +94,7 @@ private:
   std::filesystem::path m_filename;
   std::filesystem::path m_move_on_close;
   bool m_overwrite{ };
-  std::set<std::string> m_filenames;
+  std::map<std::string, time_t> m_contents;
 
   std::mutex m_zip_mutex;
   std::unique_ptr<ILossyCompressor> m_lossy_compressor;

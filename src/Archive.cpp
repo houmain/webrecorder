@@ -7,6 +7,7 @@
 #include <ctime>
 #include <filesystem>
 #include <string>
+#include <cassert>
 
 #if defined(_WIN32)
 # if !defined(UNICODE)
@@ -27,6 +28,10 @@ namespace {
       "svg", "bmp", "tga",
       "pdf", "doc", "ppt", "xls", "rtf",
       "json", "xml", "csv"));
+  }
+
+  [[nodiscard]] bool is_valid_filename(const std::string& filename) {
+    return (!filename.empty() && filename[0] != '/');
   }
 
   std::filesystem::path resolve_collision(const std::filesystem::path& target,
@@ -99,6 +104,12 @@ ArchiveReader::~ArchiveReader() {
   close();
 }
 
+void ArchiveReader::set_overlay_path(std::string path) {
+  if (!path.empty() && path.back() != '/')
+    path.push_back('/');
+  m_overlay_path = std::move(path);
+}
+
 bool ArchiveReader::open(const std::filesystem::path& filename) {
   close();
 
@@ -140,7 +151,22 @@ void ArchiveReader::close() {
   m_unzip_contexts.clear();
 }
 
-std::optional<ArchiveFileInfo> ArchiveReader::get_file_info(const std::string& filename) const {
+std::optional<ArchiveFileInfo> ArchiveReader::get_file_info(
+    const std::string& filename, FileVersion version) const {
+  assert(is_valid_filename(filename));
+
+  if (version == top || version == overlay)
+    if (!m_overlay_path.empty())
+      if (auto info = do_get_file_info(m_overlay_path + filename))
+        return info;
+
+  if (version == top || version == base)
+    return do_get_file_info(filename);
+
+  return { };
+}
+
+std::optional<ArchiveFileInfo> ArchiveReader::do_get_file_info(const std::string& filename) const {
   auto unzip = acquire_context();
   if (!unzip)
     return { };
@@ -160,7 +186,22 @@ std::optional<ArchiveFileInfo> ArchiveReader::get_file_info(const std::string& f
   };
 }
 
-ByteVector ArchiveReader::read(const std::string& filename) const {
+ByteVector ArchiveReader::read(const std::string& filename,
+    FileVersion version) const {
+  assert(is_valid_filename(filename));
+
+  if (version == top || version == overlay)
+    if (!m_overlay_path.empty())
+      if (auto data = do_read(m_overlay_path + filename); !data.empty())
+        return data;
+
+  if (version == top || version == base)
+    return do_read(filename);
+
+  return { };
+}
+
+ByteVector ArchiveReader::do_read(const std::string& filename) const {
   auto unzip = acquire_context();
   if (!unzip)
     return { };
@@ -214,9 +255,10 @@ bool ArchiveWriter::open(std::filesystem::path filename) {
     return false;
 
   m_filename = std::move(filename);
-  if (!reopen(false))
+  if (!reopen(false)) {
+    m_filename.clear();
     return false;
-
+  }
   start_thread();
   return true;
 }
@@ -244,13 +286,27 @@ bool ArchiveWriter::close() {
   return true;
 }
 
+std::optional<time_t> ArchiveWriter::get_modification_time(
+    const std::string& filename) const {
+  assert(is_valid_filename(filename));
+  if (auto it = m_contents.find(filename); it != m_contents.end())
+    return it->second;
+  return std::nullopt;
+}
+
 bool ArchiveWriter::contains(const std::string& filename) const {
-  return (m_filenames.count(filename) > 0);
+  return get_modification_time(filename).has_value();
+}
+
+bool ArchiveWriter::update_contents(const std::string& filename,
+    time_t modification_time) {
+  assert(is_valid_filename(filename));
+  return m_contents.try_emplace(filename, modification_time).second;
 }
 
 bool ArchiveWriter::write(const std::string& filename, ByteView data,
     time_t modification_time, bool allow_lossy_compression) {
-  if (!update_filenames(filename))
+  if (!update_contents(filename, modification_time))
     return false;
 
   return do_write(filename, data, modification_time, allow_lossy_compression);
@@ -259,8 +315,7 @@ bool ArchiveWriter::write(const std::string& filename, ByteView data,
 void ArchiveWriter::async_write(const std::string& filename, ByteView data,
     time_t modification_time, bool allow_lossy_compression,
     std::function<void(bool)>&& on_complete) {
-
-  if (!update_filenames(filename))
+  if (!update_contents(filename, modification_time))
     return on_complete(false);
 
   insert_task([this, filename, data, modification_time,
@@ -271,19 +326,11 @@ void ArchiveWriter::async_write(const std::string& filename, ByteView data,
 
 void ArchiveWriter::async_read(const std::string& filename,
     std::function<void(ByteVector, time_t)>&& on_complete) {
+  assert(is_valid_filename(filename));
   insert_task([this, filename, on_complete = std::move(on_complete)]() {
     auto [data, time] = do_read(filename);
     on_complete(std::move(data), time);
   });
-}
-
-bool ArchiveWriter::update_filenames(const std::string& filename) {
-  if (filename.empty() || starts_with(filename, "/"))
-    return false;
-  if (m_filenames.count(filename) > 0)
-    return false;
-  m_filenames.insert(filename);
-  return true;
 }
 
 void ArchiveWriter::do_close() {

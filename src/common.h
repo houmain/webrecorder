@@ -62,3 +62,10 @@ std::string_view get_without_first_domain(LStringView url);
 std::string_view get_file_extension(LStringView url);
 
 std::string_view unpatch_url(LStringView url);
+
+std::string get_identifying_url(std::string url, ByteView request_data);
+
+std::string url_to_regex(std::string_view url, bool sub_domains = false);
+
+std::string generate_id(int length = 8);
+std::filesystem::path generate_temporary_filename(std::string prefix);
