@@ -484,7 +484,6 @@ void Logic::append_unrequested_files() {
     const auto filename = to_local_filename(identifying_url);
     auto base_modification_time = m_archive_writer->get_modification_time(filename);
 
-    auto succeeded = true;
     if (!base_modification_time.has_value()) {
       // write base
       m_header_writer.write(identifying_url, entry.status_code, entry.header);
@@ -492,23 +491,25 @@ void Logic::append_unrequested_files() {
       const auto version = (m_settings.archive_policy == ArchivePolicy::first ?
         ArchiveReader::top : ArchiveReader::base);
 
-      if (const auto info = m_archive_reader->get_file_info(filename, version)) {
-        const auto data = m_archive_reader->read(filename, version);
-        succeeded &= m_archive_writer->write(filename, data, info->modification_time);
-        base_modification_time = info->modification_time;
-      }
+      if (const auto info = m_archive_reader->get_file_info(filename, version))
+        if (auto data = m_archive_reader->read(filename, version); !data.empty()) {
+          const auto data_view = ByteView(data);
+          m_archive_writer->async_write(filename, data_view, 
+            info->modification_time, false, [data = std::move(data)](bool) { });
+          base_modification_time = info->modification_time;
+        }
     }
 
     if (m_settings.archive_policy == ArchivePolicy::latest_and_first) {
       // write first
       const auto info = m_archive_reader->get_file_info(filename, ArchiveReader::top);
-      if (info && info->modification_time != base_modification_time) {
-        const auto data = m_archive_reader->read(filename, ArchiveReader::top);
-        succeeded &= m_archive_writer->write(first_overlay_path + filename, data, info->modification_time);
-      }
+      if (info && info->modification_time != base_modification_time)
+        if (auto data = m_archive_reader->read(filename, ArchiveReader::top); !data.empty()) {
+          const auto data_view = ByteView(data);
+          m_archive_writer->async_write(first_overlay_path + filename, data_view, 
+            info->modification_time, false, [data = std::move(data)](bool) { });
+        }
     }
-    if (!succeeded)
-      log(Event::writing_failed);
   }
 }
 
@@ -565,5 +566,5 @@ FileRequestAction get_file_request_action(const Settings& settings,
     download = false;
   }
 
-  return { .serve = serve, .write = write, .download = download };
+  return { serve, write, download };
 }

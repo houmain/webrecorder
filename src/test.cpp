@@ -188,61 +188,61 @@ namespace {
     settings.download_policy = DownloadPolicy::standard;
     settings.serve_policy = ServePolicy::latest;
     settings.archive_policy = ArchivePolicy::latest;
-    check_not_archived({ .serve = false, .write = false, .download = true });
-    check_expired({      .serve = false, .write = false, .download = true });
-    check_not_expired({  .serve = true,  .write = true,  .download = false });
+    check_not_archived({ false, false, true });
+    check_expired({      false, false, true });
+    check_not_expired({  true,  true,  false });
 
     // download always
     settings.download_policy = DownloadPolicy::always;
-    check_not_archived({ .serve = false, .write = false, .download = true });
-    check_expired({      .serve = false, .write = false, .download = true });
-    check_not_expired({  .serve = false, .write = false, .download = true });
+    check_not_archived({ false, false, true });
+    check_expired({      false, false, true });
+    check_not_expired({  false, false, true });
 
     // download never
     settings.download_policy = DownloadPolicy::never;
-    check_not_archived({ .serve = false, .write = false, .download = false });
-    check_expired({      .serve = true,  .write = true,  .download = false });
-    check_not_expired({  .serve = true,  .write = true,  .download = false });
+    check_not_archived({ false, false, false });
+    check_expired({      true,  true,  false });
+    check_not_expired({  true,  true,  false });
 
     // standard, serve last archived
     settings.download_policy = DownloadPolicy::standard;
     settings.serve_policy = ServePolicy::last_archived;
     settings.archive_policy = ArchivePolicy::latest;
-    check_not_archived({ .serve = false, .write = false, .download = true });
-    check_expired({      .serve = true,  .write = false, .download = true });
-    check_not_expired({  .serve = true,  .write = true,  .download = false });
+    check_not_archived({ false, false, true });
+    check_expired({      true,  false, true });
+    check_not_expired({  true,  true,  false });
 
     // download always, serve last archived
     settings.download_policy = DownloadPolicy::always;
-    check_not_archived({ .serve = false, .write = false, .download = true });
-    check_expired({      .serve = true,  .write = false, .download = true });
-    check_not_expired({  .serve = true,  .write = false, .download = true });
+    check_not_archived({ false, false, true });
+    check_expired({      true,  false, true });
+    check_not_expired({  true,  false, true });
 
     // download never, serve last archived
     settings.download_policy = DownloadPolicy::never;
-    check_not_archived({ .serve = false, .write = false, .download = false });
-    check_expired({      .serve = true,  .write = true,  .download = false });
-    check_not_expired({  .serve = true,  .write = true,  .download = false });
+    check_not_archived({ false, false, false });
+    check_expired({      true,  true,  false });
+    check_not_expired({  true,  true,  false });
 
     // standard, serve first archived
     settings.download_policy = DownloadPolicy::standard;
     settings.serve_policy = ServePolicy::first_archived;
     settings.archive_policy = ArchivePolicy::latest;
-    check_not_archived({ .serve = false, .write = false, .download = true });
-    check_expired({      .serve = true,  .write = false, .download = false });
-    check_not_expired({  .serve = true,  .write = false, .download = false });
+    check_not_archived({ false, false, true });
+    check_expired({      true,  false, false });
+    check_not_expired({  true,  false, false });
 
     // download always, serve first archived (download always has no effect)
     settings.download_policy = DownloadPolicy::always;
-    check_not_archived({ .serve = false, .write = false, .download = true });
-    check_expired({      .serve = true,  .write = false, .download = false });
-    check_not_expired({  .serve = true,  .write = false, .download = false });
+    check_not_archived({ false, false, true });
+    check_expired({      true,  false, false });
+    check_not_expired({  true,  false, false });
 
     // download never, serve first archived
     settings.download_policy = DownloadPolicy::never;
-    check_not_archived({ .serve = false, .write = false, .download = false });
-    check_expired({      .serve = true,  .write = false, .download = false });
-    check_not_expired({  .serve = true,  .write = false, .download = false });
+    check_not_archived({ false, false, false });
+    check_expired({      true,  false, false });
+    check_not_expired({  true,  false, false });
   }
 } // namepace
 

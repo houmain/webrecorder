@@ -12,14 +12,18 @@
 
 class ILossyCompressor;
 
-struct ArchiveFileInfo {
-  uint64_t compressed_size;
-  uint64_t uncompressed_size;
-  time_t modification_time;
-};
 
 class ArchiveReader final {
 public:
+  struct FileInfo {
+    uint64_t compressed_size;
+    uint64_t uncompressed_size;
+    time_t modification_time;
+
+    uint64_t directory_entry;
+    uint64_t file_index;
+  };
+
   enum FileVersion {
     top,
     overlay,
@@ -35,7 +39,7 @@ public:
   bool open(const std::filesystem::path& filename);
   void close();
 
-  std::optional<ArchiveFileInfo> get_file_info(
+  std::optional<FileInfo> get_file_info(
     const std::string& filename, FileVersion version = top) const;
   ByteVector read(const std::string& filename,
     FileVersion version = top) const;
@@ -43,15 +47,17 @@ public:
   void for_each_file(const std::function<void(std::string)>& callback) const;
 
 private:
+  bool read_contents();
   void* acquire_context() const;
   void return_context(void* context) const;
-  std::optional<ArchiveFileInfo> do_get_file_info(const std::string& filename) const;
+  std::optional<FileInfo> do_get_file_info(const std::string& filename) const;
   ByteVector do_read(const std::string& filename) const;
 
   std::filesystem::path m_filename;
   std::string m_overlay_path;
   mutable std::mutex m_mutex;
   mutable std::vector<void*> m_unzip_contexts;
+  std::map<std::string, FileInfo> m_contents;
 };
 
 //-------------------------------------------------------------------------

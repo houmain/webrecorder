@@ -168,6 +168,9 @@ namespace {
 } // namespace
 
 std::string get_message_utf8(std::error_code error) {
+  // End of file
+  if (error.value() == 2)
+    return { };
   return wide_to_utf8(multibyte_to_wide(error.message()));
 }
 

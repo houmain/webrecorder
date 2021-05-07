@@ -114,11 +114,7 @@ bool ArchiveReader::open(const std::filesystem::path& filename) {
   close();
 
   m_filename = filename;
-  if (auto unzip = acquire_context()) {
-    return_context(unzip);
-    return true;
-  }
-  return false;
+  return read_contents();
 }
 
 void* ArchiveReader::acquire_context() const {
@@ -151,8 +147,8 @@ void ArchiveReader::close() {
   m_unzip_contexts.clear();
 }
 
-std::optional<ArchiveFileInfo> ArchiveReader::get_file_info(
-    const std::string& filename, FileVersion version) const {
+auto ArchiveReader::get_file_info(const std::string& filename, 
+    FileVersion version) const -> std::optional<FileInfo> {
   assert(is_valid_filename(filename));
 
   if (version == top || version == overlay)
@@ -166,24 +162,10 @@ std::optional<ArchiveFileInfo> ArchiveReader::get_file_info(
   return { };
 }
 
-std::optional<ArchiveFileInfo> ArchiveReader::do_get_file_info(const std::string& filename) const {
-  auto unzip = acquire_context();
-  if (!unzip)
-    return { };
-  auto guard = std::shared_ptr<void>(nullptr, [&](auto) { return_context(unzip); });
-
-  if (::unzLocateFile(unzip, filename.c_str(), 0) != UNZ_OK)
-    return { };
-
-  auto info = unz_file_info{ };
-  ::unzGetCurrentFileInfo(unzip, &info,
-    nullptr, 0, nullptr, 0, nullptr, 0);
-
-  return ArchiveFileInfo{
-    static_cast<size_t>(info.compressed_size),
-    static_cast<size_t>(info.uncompressed_size),
-    to_time_t(info.tmu_date)
-  };
+auto ArchiveReader::do_get_file_info(const std::string& filename) const -> std::optional<FileInfo> {
+  if (auto it = m_contents.find(filename); it != m_contents.end())
+    return it->second;
+  return { };
 }
 
 ByteVector ArchiveReader::read(const std::string& filename,
@@ -202,12 +184,21 @@ ByteVector ArchiveReader::read(const std::string& filename,
 }
 
 ByteVector ArchiveReader::do_read(const std::string& filename) const {
+  const auto it = m_contents.find(filename);
+  if (it == m_contents.end())
+    return { };
+
+  auto position = unz64_file_pos{
+    it->second.directory_entry,
+    it->second.file_index
+  };
+
   auto unzip = acquire_context();
   if (!unzip)
     return { };
   auto guard = std::shared_ptr<void>(nullptr, [&](auto) { return_context(unzip); });
 
-  if (::unzLocateFile(unzip, filename.c_str(), 0) != UNZ_OK ||
+  if (::unzGoToFilePos64(unzip, &position) != UNZ_OK ||
       ::unzOpenCurrentFile(unzip) != UNZ_OK)
     return { };
 
@@ -222,18 +213,35 @@ ByteVector ArchiveReader::do_read(const std::string& filename) const {
   return buffer;
 }
 
-void ArchiveReader::for_each_file(const std::function<void(std::string)>& callback) const {
+bool ArchiveReader::read_contents() {
   auto unzip = acquire_context();
   if (!unzip)
-    return;
+    return false;
   auto guard = std::shared_ptr<void>(nullptr, [&](auto) { return_context(unzip); });
 
   auto filename = std::vector<char>(255 + 1);
   for (::unzGoToFirstFile(unzip); ::unzGoToNextFile(unzip) == UNZ_OK; ) {
-    ::unzGetCurrentFileInfo(unzip, nullptr,
+    auto info = unz_file_info{ };
+    ::unzGetCurrentFileInfo(unzip, &info,
       filename.data(), filename.size(), nullptr, 0, nullptr, 0);
-    callback(filename.data());
+
+    auto position = unz64_file_pos{ };
+    ::unzGetFilePos64(unzip, &position);
+
+    m_contents.emplace(filename.data(), FileInfo{
+      static_cast<size_t>(info.compressed_size),
+      static_cast<size_t>(info.uncompressed_size),
+      to_time_t(info.tmu_date),
+      position.pos_in_zip_directory,
+      position.num_of_file
+    });    
   }
+  return true;
+}
+
+void ArchiveReader::for_each_file(const std::function<void(std::string)>& callback) const {
+  for (const auto& [filename, info] : m_contents)
+    callback(filename.data());
 }
 
 //-------------------------------------------------------------------------

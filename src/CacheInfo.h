@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Server.h"
+#include <optional>
 
 struct CacheInfo {
   bool expired;
