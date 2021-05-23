@@ -17,8 +17,6 @@
 #endif
 
 namespace {
-  enum class MoveCollisionResolution { fail, overwrite, rename };
-
   bool is_likely_compressible(std::string_view filename) {
     const auto extension = get_file_extension(filename);
     return (iequals_any(extension, "",
@@ -34,32 +32,16 @@ namespace {
     return (!filename.empty() && filename[0] != '/');
   }
 
-  std::filesystem::path resolve_collision(const std::filesystem::path& target,
-      MoveCollisionResolution collision_resolution) {
+  std::filesystem::path resolve_collision(
+      const std::filesystem::path& target, bool overwrite) {
 
     auto error = std::error_code{ };
     if (!std::filesystem::exists(target, error) && !error)
       return target;
 
-    switch (collision_resolution) {
-      case MoveCollisionResolution::fail:
-        break;
+    if (overwrite && std::filesystem::remove(target, error) && !error)
+      return target;
 
-      case MoveCollisionResolution::overwrite:
-        std::filesystem::remove(target, error);
-        if (!error)
-          return target;
-        break;
-
-      case MoveCollisionResolution::rename:
-        for (auto i = 2; i < 100; ++i) {
-          auto renamed = target;
-          renamed += " [" + std::to_string(i) + "]";
-          if (!std::filesystem::exists(renamed, error) && !error)
-            return renamed;
-        }
-        break;
-    }
     return { };
   }
 
@@ -285,8 +267,7 @@ bool ArchiveWriter::close() {
 
   auto filename = std::exchange(m_filename, { });
   if (!m_move_on_close.empty()) {
-    const auto move_on_close = resolve_collision(m_move_on_close, m_overwrite ?
-      MoveCollisionResolution::overwrite : MoveCollisionResolution::rename);
+    const auto move_on_close = resolve_collision(m_move_on_close, m_overwrite);
     if (move_on_close.empty())
       return false;
     return move_file(filename, move_on_close);
