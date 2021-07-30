@@ -226,7 +226,7 @@ void Logic::forward_request(Server::Request request, const std::string& url,
       header.emplace(name, value);
     }
 
-  header.emplace("Referer", m_server_base);
+  header.emplace("Referer", get_scheme_hostname_port(url));
 
   m_cookie_store.for_each_cookie(url, [&](const auto& cookie) {
     header.emplace("Cookie", cookie);
