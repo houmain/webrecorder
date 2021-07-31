@@ -8,7 +8,7 @@
 #include <cassert>
 
 namespace {
-  const auto basic_js_header = Header{ { "Content-Type", "text/javascript;charset=utf-8" } };
+  const auto basic_text_header = Header{ { "Content-Type", "text/javascript;charset=utf-8" } };
   const auto set_cookie_request = "/__webrecorder_setcookie";
   const auto inject_javascript_request = "/__webrecorder.js";
   const auto first_overlay_path = "first/";
@@ -133,7 +133,7 @@ void Logic::handle_request(Server::Request request) {
 
   if (ends_with(request.path(), inject_javascript_request))
     return request.send_response(StatusCode::success_ok,
-      basic_js_header, as_byte_view(m_inject_javascript_code));
+      basic_text_header, as_byte_view(m_inject_javascript_code));
 
   if (ends_with(request.path(), set_cookie_request)) {
     m_cookie_store.set(url, as_string_view(request.data()));
@@ -186,7 +186,7 @@ void Logic::serve_error(Server::Request& request, const std::string& url,
   if (status_code == StatusCode::unknown)
     status_code = StatusCode::client_error_not_found;
   log(Event::download_failed, url);
-  request.send_response(status_code, { }, { });
+  request.send_response(status_code, basic_text_header, { });
 }
 
 void Logic::handle_file_request(Server::Request request, const std::string& url) {

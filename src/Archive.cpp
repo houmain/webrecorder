@@ -28,7 +28,7 @@ namespace {
       "json", "xml", "csv"));
   }
 
-  [[nodiscard]] bool is_valid_filename(const std::string& filename) {
+  [[nodiscard, maybe_unused]] bool is_valid_filename(const std::string& filename) {
     return (!filename.empty() && filename[0] != '/');
   }
 
