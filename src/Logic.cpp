@@ -228,9 +228,8 @@ void Logic::forward_request(Server::Request request, const std::string& url,
 
   header.emplace("Referer", get_scheme_hostname_port(url));
 
-  m_cookie_store.for_each_cookie(url, [&](const auto& cookie) {
-    header.emplace("Cookie", cookie);
-  });
+  if (auto cookies = m_cookie_store.get_cookies_list(url); !cookies.empty())
+    header.emplace("Cookie", cookies);
 
   if (cache_info && cache_info->last_modified_time)
     header.emplace("If-Modified-Since", format_time(cache_info->last_modified_time));

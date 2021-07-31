@@ -5,11 +5,12 @@
 
 void CookieStore::set(const std::string& url, std::string_view cookie) {
   auto lock = std::lock_guard(m_mutex);
-  const auto hostname = get_hostname(url);
+  const auto hostname = std::string(get_hostname(url));
   const auto equal = cookie.find('=');
   const auto key = cookie.substr(0, equal);
   const auto value = cookie.substr(equal + 1);
-  m_cookies[std::string(hostname)][std::string(key)] = value;
+  m_cookies[hostname][std::string(key)] = value;
+  m_cookies_list_cache.erase(hostname);
 }
 
 std::string CookieStore::serialize() const {
@@ -54,10 +55,26 @@ void CookieStore::deserialize(std::string_view data) {
 }
 
 std::string CookieStore::get_cookies_list(const std::string& url) const {
-  auto cookies = std::string();
-  for_each_cookie(url, [&](const auto& cookie) {
-    cookies += (cookies.empty() ? "" : "; ");
-    cookies += cookie;
-  });
-  return cookies;
+  auto lock = std::lock_guard(m_mutex);
+  const auto hostname = std::string(get_hostname(url));
+  auto it = m_cookies_list_cache.find(hostname);
+  if (it == end(m_cookies_list_cache))
+    it = m_cookies_list_cache.emplace(hostname, build_cookies_list(hostname)).first;
+  return it->second;
+}
+
+std::string CookieStore::build_cookies_list(const std::string& hostname) const {
+  auto cookies = std::ostringstream();
+  if (auto it = m_cookies.find(hostname); it != m_cookies.end()) {
+    auto first = true;
+    for (const auto& cookie : it->second) {
+      const auto& value = cookie.second;
+      const auto semicolon = value.find(';');
+      if (!std::exchange(first, false))
+        cookies << "; ";
+      cookies << cookie.first << '=' <<
+        (semicolon != std::string::npos ? value.substr(0, semicolon) : value);
+    }
+  }
+  return cookies.str();
 }
