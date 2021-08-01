@@ -5,6 +5,7 @@
 #include "HostList.h"
 #include "platform.h"
 #include <filesystem>
+#include <sstream>
 
 extern void tests();
 
@@ -32,7 +33,11 @@ int run(int argc, const char* argv[]) noexcept try {
   server.run(
     [&](unsigned short port) {
       const auto path = settings.url.substr(get_scheme_hostname_port(settings.url).size());
-      const auto local_server_url = "http://127.0.0.1:" + std::to_string(port) + path;
+      const auto local_server_url = [&]() {
+        auto ss = std::ostringstream();
+        ss << "http://" << settings.localhost << ':' << port << path;
+        return ss.str();
+      }();
       logic.set_local_server_url(local_server_url);
 
       if (settings.open_browser)

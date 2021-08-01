@@ -24,6 +24,7 @@ enum class ArchivePolicy {
 
 struct Settings {
   bool verbose{ };
+  std::string localhost{ "127.0.0.1" };
   std::string url;
   std::filesystem::path input_file;
   std::filesystem::path output_file;

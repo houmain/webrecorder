@@ -39,6 +39,11 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
         return false;
       settings.inject_javascript_file = utf8_to_path(unquote(argv[i]));
     }
+    else if (argument == "--localhost") {
+      if (++i >= argc)
+        return false;
+      settings.localhost = unquote(argv[i]);
+    }
     else if (argument == "--patch-base-tag") {
       settings.patch_base_tag = true;
     }
@@ -155,6 +160,7 @@ void print_help_message(const char* argv0) {
   "";
 #endif
 
+  const auto defaults = Settings{ };
   printf(
     "webrecorder %s(c) 2019-2021 by Albert Kalchmair\n"
     "\n"
@@ -176,8 +182,9 @@ void print_help_message(const char* argv0) {
     "                                 first\n"
     "                                 latest-and-first\n"
     "                                 requested\n"
-    "  --refresh-timeout <secs>   refresh timeout (default: 1).\n"
-    "  --request-timeout <secs>   request timeout (default: 5).\n"
+    "  --refresh-timeout <secs>   refresh timeout (default: %i).\n"
+    "  --request-timeout <secs>   request timeout (default: %i).\n"
+    "  --localhost <hostname>     set hostname of local server (default: %s).\n"
     "  --allow-lossy-compression  allow lossy compression of big images.\n"
     "  --block-hosts-file <file>  block hosts in file.\n"
     "  --inject-js-file <file>    inject JavaScript in every HTML file.\n"
@@ -189,5 +196,8 @@ void print_help_message(const char* argv0) {
     "All Rights Reserved.\n"
     "This program comes with absolutely no warranty.\n"
     "See the GNU General Public License, version 3 for details.\n"
-    "\n", version, program.c_str());
+    "\n", version, program.c_str(),
+    static_cast<int>(defaults.refresh_timeout.count()),
+    static_cast<int>(defaults.request_timeout.count()),
+    defaults.localhost.c_str());
 }
