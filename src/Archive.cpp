@@ -16,6 +16,10 @@
 # include "libs/minizip/iowin32.h"
 #endif
 
+#ifndef UNZ_MAXFILENAMEINZIP
+# define UNZ_MAXFILENAMEINZIP (256)
+#endif
+
 namespace {
   bool is_likely_compressible(std::string_view filename) {
     const auto extension = get_file_extension(filename);
@@ -201,8 +205,9 @@ bool ArchiveReader::read_contents() {
     return false;
   auto guard = std::shared_ptr<void>(nullptr, [&](auto) { return_context(unzip); });
 
-  auto filename = std::vector<char>(255 + 1);
-  for (::unzGoToFirstFile(unzip); ::unzGoToNextFile(unzip) == UNZ_OK; ) {
+  auto filename = std::vector<char>(UNZ_MAXFILENAMEINZIP + 1);
+  auto result = ::unzGoToFirstFile(unzip);
+  while (result == UNZ_OK) {
     auto info = unz_file_info{ };
     ::unzGetCurrentFileInfo(unzip, &info,
       filename.data(), filename.size(), nullptr, 0, nullptr, 0);
@@ -216,7 +221,8 @@ bool ArchiveReader::read_contents() {
       to_time_t(info.tmu_date),
       position.pos_in_zip_directory,
       position.num_of_file
-    });    
+    });
+    result = ::unzGoToNextFile(unzip);
   }
   return true;
 }
