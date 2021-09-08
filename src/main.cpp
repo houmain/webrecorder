@@ -26,7 +26,8 @@ int run(int argc, const char* argv[]) noexcept try {
   using namespace std::placeholders;
   auto server = Server(
     std::bind(&Logic::handle_request, &logic, _1),
-    std::bind(&Logic::handle_error, &logic, _1, _2));
+    std::bind(&Logic::handle_error, &logic, _1, _2),
+    settings.exit_method);
 
   logic.set_start_threads_callback([&]() { server.run_threads(5); });
 

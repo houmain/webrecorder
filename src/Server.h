@@ -43,7 +43,8 @@ public:
   using HandleRequest = std::function<void(Request)>;
   using HandleError = std::function<void(Request, std::error_code)>;
 
-  Server(HandleRequest handle_request, HandleError handle_error);
+  Server(HandleRequest handle_request, HandleError handle_error,
+    const std::string& exit_method);
   Server(Server&&);
   Server& operator=(Server&&);
   ~Server();

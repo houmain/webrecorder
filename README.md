@@ -1,4 +1,5 @@
 # webrecorder
+
 A web server which forwards requests and records/replays responses.
 
     Usage: webrecorder [-options] [url|file]
@@ -21,4 +22,5 @@ A web server which forwards requests and records/replays responses.
       --patch-base-tag           patch base tag so URLs are relative to original host.
       --open-browser             open browser and navigate to requested URL.
       --proxy <host[:port]>      set a HTTP proxy.
+      --exit-method <name>       defines a HTTP method used to exit the application.
       -h, --help                 print this help.

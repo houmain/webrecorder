@@ -19,6 +19,7 @@ struct Server::Request::Impl {
 struct Server::Impl : public HttpServer {
   HandleRequest handle_request;
   HandleError handle_error;
+  std::string exit_method;
   std::unique_ptr<asio::signal_set> stop_signals;
   int port{ };
 
@@ -36,6 +37,15 @@ struct Server::Impl : public HttpServer {
 
     stop_signals->async_wait(std::bind(&asio::io_service::stop, io_service));
 
+    if(!exit_method.empty())
+      default_resource[exit_method.c_str()] = [this](std::shared_ptr<HttpServer::Response> response,
+        std::shared_ptr<HttpServer::Request> request) {
+        response->write(StatusCode::client_error_bad_request, std::string_view(), {});
+        response->send();
+        this->io_service->post([this]() {
+          this->io_service->stop();
+        });
+      };
     default_resource["GET"] =
     default_resource["POST"] =
     default_resource["HEAD"] =
@@ -156,11 +166,13 @@ bool Server::Request::response_sent() const {
 //-------------------------------------------------------------------------
 
 Server::Server(HandleRequest handle_request,
-               HandleError handle_error)
+               HandleError handle_error,
+               const std::string& exit_method)
     : m_impl(std::make_unique<Impl>()) {
 
   m_impl->handle_request = std::move(handle_request);
   m_impl->handle_error = std::move(handle_error);
+  m_impl->exit_method = exit_method;
   m_impl->start();
 }
 

@@ -133,6 +133,11 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
         settings.input_file = settings.output_file =
           utf8_to_path(filename_from_url(settings.url));
     }
+    else if (argument == "--exit-method") {
+      if (++i >= argc)
+        return false;
+      settings.exit_method = argv[i];
+    }
     else {
       return false;
     }

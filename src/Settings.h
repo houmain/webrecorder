@@ -40,6 +40,7 @@ struct Settings {
   std::chrono::seconds refresh_timeout{ 1 };
   std::chrono::seconds request_timeout{ 5 };
   bool open_browser{ };
+  std::string exit_method;
 };
 
 bool interpret_commandline(Settings& settings, int argc, const char* argv[]);
