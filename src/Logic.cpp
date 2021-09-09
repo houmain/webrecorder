@@ -10,6 +10,7 @@
 namespace {
   const auto basic_text_header = Header{ { "Content-Type", "text/javascript;charset=utf-8" } };
   const auto set_cookie_request = "/__webrecorder_setcookie";
+  const auto shutdown_request = "/__webrecorder_exit";
   const auto inject_javascript_request = "/__webrecorder.js";
   const auto first_overlay_path = "first/";
 } // namespace
@@ -120,6 +121,10 @@ void Logic::set_server_base(const std::string& url) {
 }
 
 void Logic::handle_request(Server::Request request) {
+  if (ends_with(request.path(), shutdown_request)) {
+    request.send_response(StatusCode::success_no_content, { }, { });
+    return Client::shutdown();
+  }
 
   if (request.method() == "OPTIONS")
     return send_cors_response(std::move(request));

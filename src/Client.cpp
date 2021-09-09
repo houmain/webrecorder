@@ -138,6 +138,12 @@ Client::Client(Client&&) = default;
 Client& Client::operator=(Client&&) = default;
 Client::~Client() = default;
 
+void Client::shutdown() {
+  sole_io_service()->post([]() {
+    sole_io_service()->stop();
+  });
+}
+
 void Client::request(std::string_view url, std::string_view method,
     Header header, ByteView data, std::chrono::seconds timeout,
     HandleResponse handle_response) {

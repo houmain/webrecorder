@@ -29,6 +29,8 @@ public:
   };
   using HandleResponse = std::function<void(Response)>;
 
+  static void shutdown();
+
   explicit Client(std::string proxy_server = "");
   Client(Client&&);
   Client& operator=(Client&&);
