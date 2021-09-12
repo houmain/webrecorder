@@ -194,7 +194,7 @@ void print_help_message(const char* argv0) {
     "  --allow-lossy-compression  allow lossy compression of big images.\n"
     "  --block-hosts-file <file>  block hosts in file.\n"
     "  --inject-js-file <file>    inject JavaScript in every HTML file.\n"
-    "  --patch-base-tag           patch base so URLs are relative to original host.\n"
+    "  --patch-base-tag           patch base tag so URLs are relative to original host.\n"
     "  --open-browser             open browser and navigate to requested URL.\n"
     "  --proxy <host[:port]>      set a HTTP proxy.\n"
     "  -h, --help                 print this help.\n"
