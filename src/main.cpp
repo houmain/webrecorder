@@ -30,7 +30,7 @@ int run(int argc, const char* argv[]) noexcept try {
 
   logic.set_start_threads_callback([&]() { server.run_threads(5); });
 
-  server.run(
+  server.run(settings.port,
     [&](unsigned short port) {
       const auto path = settings.url.substr(get_scheme_hostname_port(settings.url).size());
       const auto local_server_url = [&]() {

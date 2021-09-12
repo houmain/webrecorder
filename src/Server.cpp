@@ -67,8 +67,8 @@ struct Server::Impl : public HttpServer {
       };
   }
 
-  void run(const HandleAccepting& handle_accepting) {
-    config.port = 0;
+  void run(int port, const HandleAccepting& handle_accepting) {
+    config.port = static_cast<unsigned short>(port);
     HttpServer::start(handle_accepting);
 
     io_service->run();
@@ -176,7 +176,7 @@ void Server::run_threads(int thread_count) {
   m_impl->run_threads(thread_count);
 }
 
-void Server::run(const HandleAccepting& handle_accepting) {
-  m_impl->run(handle_accepting);
+void Server::run(int port, const HandleAccepting& handle_accepting) {
+  m_impl->run(port, handle_accepting);
   m_impl->join_threads();
 }

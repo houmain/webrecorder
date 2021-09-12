@@ -49,7 +49,7 @@ public:
   ~Server();
 
   int port() const;
-  void run(const HandleAccepting& handle_accepting);
+  void run(int port, const HandleAccepting& handle_accepting);
   void run_threads(int thread_count);
 
 private:
