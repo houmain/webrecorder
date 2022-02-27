@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 project(webrecorder)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_MODULE_PATH})
 
-set(GIT_COMMIT_LAST_TAG "unknown")
+set(GIT_COMMIT_LAST_TAG "0.0.0")
 find_package(Git)
 if(GIT_FOUND)
     execute_process(COMMAND ${GIT_EXECUTABLE} describe --tags
@@ -91,7 +91,10 @@ add_compile_definitions(NOCRYPT UNICODE ASIO_STANDALONE USE_STANDALONE_ASIO)
 
 option(USE_ICONV "Use iconv for charset conversion" ON)
 if(USE_ICONV)
-    add_compile_definitions(USE_ICONV)
+    find_package(Iconv)
+    if(Iconv_FOUND)
+        add_compile_definitions(USE_ICONV)
+    endif()
 endif()
 
 if (WIN32)
