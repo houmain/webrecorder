@@ -33,15 +33,12 @@ set(SOURCES
     src/test.cpp
 )
 
-if(NOT MSVC)
-    set_source_files_properties(${SOURCES}
-        PROPERTIES COMPILE_FLAGS  "-Wall -Wextra -Wsign-conversion -Wconversion")
-    find_package(Threads REQUIRED)
-    link_libraries(${CMAKE_THREAD_LIBS_INIT})
-    link_libraries(stdc++fs)
-else()
+if(MSVC)
     add_compile_options(/GR- /W1)
     set(MSVC_SHARED_RUNTIME OFF)
+else()
+    set_source_files_properties(${SOURCES}
+        PROPERTIES COMPILE_FLAGS  "-Wall -Wextra -Wsign-conversion -Wconversion")
 endif()
 
 set(SOURCES ${SOURCES}
@@ -106,6 +103,12 @@ if (WIN32)
 
     set(SOURCES ${SOURCES} libs/minizip/iowin32.c)
     set(INCLUDES ${INCLUDES} libs/gumbo/src/visualc)
+else()
+    find_package(Threads REQUIRED)
+    link_libraries(${CMAKE_THREAD_LIBS_INIT})
+    if(NOT APPLE)
+        link_libraries(stdc++fs)
+    endif()
 endif()
 
 find_package(OpenSSL REQUIRED)
@@ -119,7 +122,7 @@ source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${SOURCES} ${HEADERS})
 add_executable(webrecorder ${SOURCES} ${HEADERS})
 
 if(WIN32 AND NOT MSVC)
-  target_link_options(webrecorder BEFORE PUBLIC -municode)
+    target_link_options(webrecorder BEFORE PUBLIC -municode)
 endif()
 
 if(NOT WIN32)
