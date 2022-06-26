@@ -1,6 +1,7 @@
 
 #include "common.h"
 #include "libs/utf8/utf8.h"
+#include <array>
 #include <random>
 #include <sstream>
 #include <iomanip>
