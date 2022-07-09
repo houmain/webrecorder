@@ -63,7 +63,7 @@ A C++17 conforming compiler is required. A script for the
 
 **Installing dependencies on Debian Linux and derivatives:**
 ```
-sudo apt install build-essential git cmake
+sudo apt install build-essential git cmake libasio-dev libssl-dev
 ```
 
 **Checking out the source:**
@@ -74,10 +74,8 @@ git clone https://github.com/houmain/webrecorder
 **Building:**
 ```
 cd webrecorder
-mkdir build
-cd build
-cmake ..
-cmake --build . --config Release
+cmake -B _build
+cmake --build _build
 ```
 
 License

@@ -125,8 +125,5 @@ if(WIN32 AND NOT MSVC)
     target_link_options(webrecorder BEFORE PUBLIC -municode)
 endif()
 
-if(NOT WIN32)
-    install(TARGETS webrecorder DESTINATION "bin")
-else()
-    install(TARGETS webrecorder DESTINATION .)
-endif()
+# install
+install(TARGETS webrecorder DESTINATION .)
