@@ -131,7 +131,7 @@ std::string_view HtmlPatcher::get_link(std::string_view at) const {
 void HtmlPatcher::inject_base(std::string_view at) {
   if (m_patch_base_tag) {
     auto base_script = "<base href='" +
-      std::string(get_scheme_hostname_port_path(m_base_url)) + "'>";
+      std::string(get_scheme_hostname_port_path_query(m_base_url)) + "'>";
     patch(at, std::move(base_script));
   }
 }

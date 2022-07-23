@@ -145,18 +145,20 @@ namespace {
     eq(get_scheme_hostname_port_path("http://www.a.com:8080/file?query"), "http://www.a.com:8080/file");
     eq(get_scheme_hostname_port_path("http://www.a.com:8080/file#fragment"), "http://www.a.com:8080/file");
 
-    eq(get_scheme_hostname_port_path_base("http://www.a.com"), "http://www.a.com");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com/"), "http://www.a.com/");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com/sub/"), "http://www.a.com/sub/");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com/sub/file"), "http://www.a.com/sub/");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com/file?query"), "http://www.a.com/");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com/file#fragment"), "http://www.a.com/");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com:8080"), "http://www.a.com:8080");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/"), "http://www.a.com:8080/");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/sub/"), "http://www.a.com:8080/sub/");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/sub/file"), "http://www.a.com:8080/sub/");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/file?query"), "http://www.a.com:8080/");
-    eq(get_scheme_hostname_port_path_base("http://www.a.com:8080/file#fragment"), "http://www.a.com:8080/");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com"), "http://www.a.com");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com/"), "http://www.a.com/");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com/sub/"), "http://www.a.com/sub/");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com/sub/file"), "http://www.a.com/sub/file");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com/file?query"), "http://www.a.com/file?query");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com/file#fragment"), "http://www.a.com/file");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com/file?query#fragment"), "http://www.a.com/file?query");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com:8080"), "http://www.a.com:8080");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com:8080/"), "http://www.a.com:8080/");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com:8080/sub/"), "http://www.a.com:8080/sub/");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com:8080/sub/file"), "http://www.a.com:8080/sub/file");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com:8080/file?query"), "http://www.a.com:8080/file?query");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com:8080/file#fragment"), "http://www.a.com:8080/file");
+    eq(get_scheme_hostname_port_path_query("http://www.a.com:8080/file?query#fragment"), "http://www.a.com:8080/file?query");
 
     eq(get_file_extension("http://www.a.com:8080/file?query"), "");
     eq(get_file_extension("http://www.a.com:8080/file.txt?query"), "txt");

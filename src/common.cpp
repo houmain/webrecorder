@@ -406,14 +406,12 @@ std::string_view get_scheme_hostname_port_path(LStringView url) {
   return url.substr(0, n);
 }
 
-std::string_view get_scheme_hostname_port_path_base(LStringView url) {
-  if (is_relative_url(url))
-    return url;
-
-  const auto path = get_scheme_hostname_port_path(url);
-  if (path == get_scheme_hostname_port(url))
-    return path;
-  return path.substr(0, path.rfind('/') + 1);
+std::string_view get_scheme_hostname_port_path_query(LStringView url) {
+  auto n = std::string_view::npos;
+  const auto hash = url.find("#");
+  if (hash != std::string_view::npos)
+    n = hash;
+  return url.substr(0, n);
 }
 
 std::string_view get_without_first_domain(LStringView url) {
