@@ -183,13 +183,13 @@ std::string Logic::apply_strict_transport_security(std::string url) const {
 
 void Logic::serve_blocked(Server::Request& request, const std::string& url) {
   log(Event::download_blocked, url);
-  serve_error(request, url, StatusCode::client_error_not_found);
+  serve_error(request, url, StatusCode::server_error_service_unavailable);
 }
 
 void Logic::serve_error(Server::Request& request, const std::string& url,
                         StatusCode status_code) {
   if (status_code == StatusCode::unknown)
-    status_code = StatusCode::client_error_not_found;
+    status_code = StatusCode::server_error_service_unavailable;
   log(Event::download_failed, url);
   request.send_response(status_code, basic_text_header, { });
 }
@@ -211,7 +211,7 @@ void Logic::handle_file_request(Server::Request request, const std::string& url)
 
   if (!action.download) {
     if (!request.response_sent())
-      serve_error(request, url, StatusCode::client_error_not_found);
+      serve_error(request, url, StatusCode::server_error_service_unavailable);
     return;
   }
   forward_request(std::move(request), url, cache_info);
