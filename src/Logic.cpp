@@ -5,6 +5,7 @@
 #include "LossyCompressor.h"
 #include "platform.h"
 #include <sstream>
+#include <utility>
 #include <cassert>
 
 namespace {

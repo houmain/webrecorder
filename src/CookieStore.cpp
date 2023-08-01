@@ -2,6 +2,7 @@
 #include "CookieStore.h"
 #include <sstream>
 #include <cstring>
+#include <utility>
 
 void CookieStore::set(const std::string& url, std::string_view cookie) {
   auto lock = std::lock_guard(m_mutex);

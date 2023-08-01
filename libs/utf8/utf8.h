@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 /**
  * Work between unicode code points and their UTF-8-encoded representation.
