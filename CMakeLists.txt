@@ -111,6 +111,7 @@ else()
     endif()
 endif()
 
+set(OPENSSL_USE_STATIC_LIBS TRUE)
 find_package(OpenSSL REQUIRED)
 add_compile_definitions(HAVE_OPENSSL)
 link_libraries(${OPENSSL_LIBRARIES})
