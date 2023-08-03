@@ -434,7 +434,7 @@ void Logic::handle_initial_redirects(const std::string& url,
   if (m_start_threads_callback) {
     // update server base on initial redirects
     if (is_redirect(status_code)) {
-      if (is_same_url(m_server_base_path, url))
+      if (starts_with(url, m_server_base_path))
         if (auto it = header.find("Location"); it != header.end()) {
           set_server_base(it->second);
           log(Event::redirect, it->second);

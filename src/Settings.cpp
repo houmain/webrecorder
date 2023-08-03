@@ -167,7 +167,7 @@ void print_help_message(const char* argv0) {
 
   const auto defaults = Settings{ };
   printf(
-    "webrecorder %s(c) 2019-2022 by Albert Kalchmair\n"
+    "webrecorder %s(c) 2019-2023 by Albert Kalchmair\n"
     "\n"
     "Usage: %s [-options] [url|file]\n"
     "  -u, --url <url>            set initial request URL.\n"
