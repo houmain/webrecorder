@@ -37,6 +37,7 @@ public:
 
   void set_overlay_path(std::string path);
   bool open(const std::filesystem::path& filename);
+  bool open_root(const std::filesystem::path& filename);
   void close();
 
   std::optional<FileInfo> get_file_info(
@@ -47,7 +48,7 @@ public:
   void for_each_file(const std::function<void(std::string)>& callback) const;
 
 private:
-  bool read_contents();
+  bool read_contents(bool only_root);
   void* acquire_context() const;
   void return_context(void* context) const;
   std::optional<FileInfo> do_get_file_info(const std::string& filename) const;

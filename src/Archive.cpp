@@ -85,6 +85,11 @@ namespace {
     time.tm_isdst = -1;
     return std::mktime(&time);
   }
+
+  bool is_root_filename(std::string_view filename) {
+    return (std::count_if(filename.cbegin(), filename.cend(),
+        [](char c) { return c == '/'; }) == 0);
+  }
 } // namespace
 
 ArchiveReader::~ArchiveReader() {
@@ -101,7 +106,14 @@ bool ArchiveReader::open(const std::filesystem::path& filename) {
   close();
 
   m_filename = filename;
-  return read_contents();
+  return read_contents(false);
+}
+
+bool ArchiveReader::open_root(const std::filesystem::path& filename) {
+  close();
+
+  m_filename = filename;
+  return read_contents(true);
 }
 
 void* ArchiveReader::acquire_context() const {
@@ -200,29 +212,33 @@ ByteVector ArchiveReader::do_read(const std::string& filename) const {
   return buffer;
 }
 
-bool ArchiveReader::read_contents() {
+bool ArchiveReader::read_contents(bool only_root) {
   auto unzip = acquire_context();
   if (!unzip)
     return false;
   auto guard = std::shared_ptr<void>(nullptr, [&](auto) { return_context(unzip); });
 
-  auto filename = std::vector<char>(UNZ_MAXFILENAMEINZIP + 1);
+  auto buffer = std::vector<char>(UNZ_MAXFILENAMEINZIP + 1);
   auto result = ::unzGoToFirstFile(unzip);
   while (result == UNZ_OK) {
     auto info = unz_file_info{ };
     ::unzGetCurrentFileInfo(unzip, &info,
-      filename.data(), filename.size(), nullptr, 0, nullptr, 0);
+      buffer.data(), buffer.size(), nullptr, 0, nullptr, 0);
+    const auto filename = std::string_view(buffer.data());
 
-    auto position = unz64_file_pos{ };
-    ::unzGetFilePos64(unzip, &position);
+    if (!only_root || is_root_filename(filename)) {
+      auto position = unz64_file_pos{ };
+      ::unzGetFilePos64(unzip, &position);
 
-    m_contents.emplace(filename.data(), FileInfo{
-      static_cast<size_t>(info.compressed_size),
-      static_cast<size_t>(info.uncompressed_size),
-      to_time_t(info.tmu_date),
-      position.pos_in_zip_directory,
-      position.num_of_file
-    });
+      m_contents.emplace(filename, FileInfo{
+        static_cast<size_t>(info.compressed_size),
+        static_cast<size_t>(info.uncompressed_size),
+        to_time_t(info.tmu_date),
+        position.pos_in_zip_directory,
+        position.num_of_file
+      });
+    }
+
     result = ::unzGoToNextFile(unzip);
   }
   return true;
